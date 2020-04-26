@@ -16,7 +16,7 @@
 
 package fr.davit.taxonomy
 
-import fr.davit.taxonomy.record.RecordType
+import fr.davit.taxonomy.record.DnsRecordType
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -27,41 +27,41 @@ object DnsType {
   case object Response extends DnsType(1)
 }
 
-sealed abstract class OpCode(val code: Int)
+sealed abstract class DnsOpCode(val code: Int)
 
-object OpCode {
+object DnsOpCode {
 
-  case object StandardQuery extends OpCode(0)
-  case object InverseQuery extends OpCode(1)
-  case object ServerStatusRequest extends OpCode(2)
-  case object Notify extends OpCode(4)
-  case object Update extends OpCode(5)
-  case object DnsStatefulOperations extends OpCode(5)
+  case object StandardQuery extends DnsOpCode(0)
+  case object InverseQuery extends DnsOpCode(1)
+  case object ServerStatusRequest extends DnsOpCode(2)
+  case object Notify extends DnsOpCode(4)
+  case object Update extends DnsOpCode(5)
+  case object DnsStatefulOperations extends DnsOpCode(5)
 
-  case class Unassigned(override val code: Int) extends OpCode(code) {
+  case class Unassigned(override val code: Int) extends DnsOpCode(code) {
     require(code == 3 || (5 <= code && code <= 15))
   }
 
 }
 
-sealed abstract class ResponseCode(val code: Int)
+sealed abstract class DnsResponseCode(val code: Int)
 
-object ResponseCode {
+object DnsResponseCode {
 
-  case object Success extends ResponseCode(0)
-  case object FormatError extends ResponseCode(1)
-  case object ServerFailure extends ResponseCode(2)
-  case object NonExistentDomain extends ResponseCode(3)
-  case object NotImplemented extends ResponseCode(4)
-  case object Refused extends ResponseCode(5)
-  case object ExtraDomain extends ResponseCode(6)
-  case object ExtraRRSet extends ResponseCode(7)
-  case object NonExistentRRSet extends ResponseCode(8)
-  case object NotAuth extends ResponseCode(9)
-  case object NotZone extends ResponseCode(10)
-  case object DsoTypeNotImplemented extends ResponseCode(11)
+  case object Success extends DnsResponseCode(0)
+  case object FormatError extends DnsResponseCode(1)
+  case object ServerFailure extends DnsResponseCode(2)
+  case object NonExistentDomain extends DnsResponseCode(3)
+  case object NotImplemented extends DnsResponseCode(4)
+  case object Refused extends DnsResponseCode(5)
+  case object ExtraDomain extends DnsResponseCode(6)
+  case object ExtraRRSet extends DnsResponseCode(7)
+  case object NonExistentRRSet extends DnsResponseCode(8)
+  case object NotAuth extends DnsResponseCode(9)
+  case object NotZone extends DnsResponseCode(10)
+  case object DsoTypeNotImplemented extends DnsResponseCode(11)
 
-  case class Unassigned(override val code: Int) extends ResponseCode(code) {
+  case class Unassigned(override val code: Int) extends DnsResponseCode(code) {
     require(12 <= code && code <= 255)
   }
 }
@@ -69,7 +69,7 @@ object ResponseCode {
 final case class DnsHeader(
     id: Int,
     `type`: DnsType,
-    opCode: OpCode,
+    opCode: DnsOpCode,
     isAuthoritativeAnswer: Boolean,
     isTruncated: Boolean,
     isRecursionDesired: Boolean,
@@ -80,24 +80,24 @@ final case class DnsHeader(
     countAdditionalRecords: Int
 )
 
-sealed abstract class RecordClass(val code: Int)
+sealed abstract class DnsRecordClass(val code: Int)
 
-object RecordClass {
+object DnsRecordClass {
 
-  case object Reserved extends RecordClass(0)
-  case object Internet extends RecordClass(1)
-  case object Chaos extends RecordClass(3)
-  case object Hesiod extends RecordClass(4)
-  case object Any extends RecordClass(255)
-  case class Unassigned(override val code: Int) extends RecordClass(code) {
+  case object Reserved extends DnsRecordClass(0)
+  case object Internet extends DnsRecordClass(1)
+  case object Chaos extends DnsRecordClass(3)
+  case object Hesiod extends DnsRecordClass(4)
+  case object Any extends DnsRecordClass(255)
+  case class Unassigned(override val code: Int) extends DnsRecordClass(code) {
     require(code == 2 || (5 <= code && code <= 254))
   }
 }
 
-final case class Question(
+final case class DnsQuestion(
     name: String,
-    `type`: RecordType,
-    `class`: RecordClass
+    `type`: DnsRecordType,
+    `class`: DnsRecordClass
 )
 
-final case class ResourceRecord(name: String, `type`: RecordType, `class`: RecordClass, ttl: FiniteDuration)
+final case class DnsResourceRecord(name: String, `type`: DnsRecordType, `class`: DnsRecordClass, ttl: FiniteDuration)
