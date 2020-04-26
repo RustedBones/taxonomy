@@ -34,7 +34,7 @@ lazy val commonSettings = Defaults.itSettings ++
 
 lazy val `taxonomy` = (project in file("."))
   .settings(commonSettings: _*)
-  .aggregate(`taxonomy-model`) //, `taxonomy-scodec`)
+  .aggregate(`taxonomy-model`, `taxonomy-scodec`)
   .settings(
     publish / skip := true
   )
@@ -42,12 +42,12 @@ lazy val `taxonomy` = (project in file("."))
 lazy val `taxonomy-model` = (project in file("model"))
   .settings(commonSettings: _*)
 
-//lazy val `taxonomy-scodec` = (project in file("scodec"))
-//  .dependsOn(`taxonomy-model`)
-//  .settings(commonSettings: _*)
-//  .settings(
-//    libraryDependencies ++= Seq(
-//      Dependencies.Scodec,
-//      Dependencies.Test.ScalaTest
-//    )
-//  )
+lazy val `taxonomy-scodec` = (project in file("scodec"))
+  .dependsOn(`taxonomy-model`)
+  .settings(commonSettings: _*)
+  .settings(
+    libraryDependencies ++= Seq(
+      Dependencies.Scodec,
+      Dependencies.Test.ScalaTest
+    )
+  )
