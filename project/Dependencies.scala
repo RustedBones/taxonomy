@@ -10,7 +10,7 @@ object Dependencies {
   val Scodec = "org.scodec" %% "scodec-core" % Versions.Scodec
 
   object Test {
-    val ScalaTest = "org.scalatest" %% "scalatest" % Versions.ScalaTest % "it,test"
+    val ScalaTest = "org.scalatest" %% "scalatest" % Versions.ScalaTest % "test"
   }
 
 }
