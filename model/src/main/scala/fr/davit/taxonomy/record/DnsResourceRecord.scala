@@ -103,73 +103,73 @@ object DnsAAAARecord {
 
 }
 
-case class CNAME(name: String, ttl: FiniteDuration, cname: String) extends DnsInternetRecord {
-  override def `type`: DnsRecordType     = DnsRecordType.A
-  override def data: immutable.Seq[Byte] = ???
-}
-
-case class DnsHINFORecord(name: String, ttl: FiniteDuration, cpu: String, os: String) extends DnsInternetRecord {
-  override def `type`: DnsRecordType = ???
-
-  override def data: immutable.Seq[Byte] = ???
-}
-case class DnsMXRecord(name: String, ttl: FiniteDuration, preference: Int, exchange: String) extends DnsInternetRecord {
-  override def `type`: DnsRecordType = ???
-
-  override def data: immutable.Seq[Byte] = ???
-}
-case class DnsNAPTRRecord(
-    name: String,
-    ttl: FiniteDuration,
-    order: Int,
-    preference: Int,
-    flags: String,
-    services: String,
-    regexp: String,
-    replacement: String
-) extends DnsInternetRecord {
-  override def `type`: DnsRecordType = ???
-
-  override def data: immutable.Seq[Byte] = ???
-}
-case class DnsNSRecord(name: String, ttl: FiniteDuration, nsdname: String) extends DnsInternetRecord {
-  override def `type`: DnsRecordType = ???
-
-  override def data: immutable.Seq[Byte] = ???
-}
-case class DnsOPTRecord(name: String, ttl: FiniteDuration, options: List[String]) extends DnsInternetRecord {
-  override def `type`: DnsRecordType = ???
-
-  override def data: immutable.Seq[Byte] = ???
-}
-case class DnsPTRRecord(name: String, ttl: FiniteDuration, ptrdname: String) extends DnsInternetRecord {
-  override def `type`: DnsRecordType = ???
-
-  override def data: immutable.Seq[Byte] = ???
-}
-case class DnsSOARecord(
-    name: String,
-    ttl: FiniteDuration,
-    mname: String,
-    rname: String,
-    serial: Long,
-    refresh: Long,
-    retry: Long,
-    expire: Long,
-    minimum: Long
-) extends DnsInternetRecord {
-  override def `type`: DnsRecordType = ???
-
-  override def data: immutable.Seq[Byte] = ???
-}
-case class DnsSRVRecord(name: String, ttl: FiniteDuration, priority: Int, weight: Int, port: Int, target: String)
-    extends DnsInternetRecord {
-  override def `type`: DnsRecordType = ???
-
-  override def data: immutable.Seq[Byte] = ???
-}
-case class DnsTXTRecord(name: String, ttl: FiniteDuration, txt: immutable.Seq[String]) extends DnsInternetRecord {
-  override def `type`: DnsRecordType = ???
-
-  override def data: immutable.Seq[Byte] = ???
-}
+//case class CNAME(name: String, ttl: FiniteDuration, cname: String) extends DnsInternetRecord {
+//  override def `type`: DnsRecordType     = DnsRecordType.A
+//  override def data: immutable.Seq[Byte] = ???
+//}
+//
+//case class DnsHINFORecord(name: String, ttl: FiniteDuration, cpu: String, os: String) extends DnsInternetRecord {
+//  override def `type`: DnsRecordType = ???
+//
+//  override def data: immutable.Seq[Byte] = ???
+//}
+//case class DnsMXRecord(name: String, ttl: FiniteDuration, preference: Int, exchange: String) extends DnsInternetRecord {
+//  override def `type`: DnsRecordType = ???
+//
+//  override def data: immutable.Seq[Byte] = ???
+//}
+//case class DnsNAPTRRecord(
+//    name: String,
+//    ttl: FiniteDuration,
+//    order: Int,
+//    preference: Int,
+//    flags: String,
+//    services: String,
+//    regexp: String,
+//    replacement: String
+//) extends DnsInternetRecord {
+//  override def `type`: DnsRecordType = ???
+//
+//  override def data: immutable.Seq[Byte] = ???
+//}
+//case class DnsNSRecord(name: String, ttl: FiniteDuration, nsdname: String) extends DnsInternetRecord {
+//  override def `type`: DnsRecordType = ???
+//
+//  override def data: immutable.Seq[Byte] = ???
+//}
+//case class DnsOPTRecord(name: String, ttl: FiniteDuration, options: List[String]) extends DnsInternetRecord {
+//  override def `type`: DnsRecordType = ???
+//
+//  override def data: immutable.Seq[Byte] = ???
+//}
+//case class DnsPTRRecord(name: String, ttl: FiniteDuration, ptrdname: String) extends DnsInternetRecord {
+//  override def `type`: DnsRecordType = ???
+//
+//  override def data: immutable.Seq[Byte] = ???
+//}
+//case class DnsSOARecord(
+//    name: String,
+//    ttl: FiniteDuration,
+//    mname: String,
+//    rname: String,
+//    serial: Long,
+//    refresh: Long,
+//    retry: Long,
+//    expire: Long,
+//    minimum: Long
+//) extends DnsInternetRecord {
+//  override def `type`: DnsRecordType = ???
+//
+//  override def data: immutable.Seq[Byte] = ???
+//}
+//case class DnsSRVRecord(name: String, ttl: FiniteDuration, priority: Int, weight: Int, port: Int, target: String)
+//    extends DnsInternetRecord {
+//  override def `type`: DnsRecordType = ???
+//
+//  override def data: immutable.Seq[Byte] = ???
+//}
+//case class DnsTXTRecord(name: String, ttl: FiniteDuration, txt: immutable.Seq[String]) extends DnsInternetRecord {
+//  override def `type`: DnsRecordType = ???
+//
+//  override def data: immutable.Seq[Byte] = ???
+//}
