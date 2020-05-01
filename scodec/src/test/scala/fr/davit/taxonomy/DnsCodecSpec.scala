@@ -16,9 +16,14 @@
 
 package fr.davit.taxonomy
 
+import java.net.{Inet4Address, InetAddress}
+
+import fr.davit.taxonomy.record.DnsARecord
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import scodec.bits._
+
+import scala.concurrent.duration._
 
 class DnsCodecSpec extends AnyFlatSpec with Matchers {
 
@@ -71,6 +76,13 @@ class DnsCodecSpec extends AnyFlatSpec with Matchers {
     data shouldBe expected
 
     DnsCodec.qName.decode(data).require.value shouldBe name
+  }
+
+  it should "encode / decode A record" in {
+    val ipv4    = InetAddress.getByAddress(Array[Byte](1, 2, 3, 4)).asInstanceOf[Inet4Address]
+    val aRecord = DnsARecord("name", 3.hours, ipv4)
+    val data    = DnsCodec.dnsResourceRecord.encode(aRecord).require
+    DnsCodec.dnsResourceRecord.decode(data).require.value shouldBe aRecord
   }
 
 }

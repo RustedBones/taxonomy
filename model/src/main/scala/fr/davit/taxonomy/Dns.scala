@@ -16,9 +16,7 @@
 
 package fr.davit.taxonomy
 
-import fr.davit.taxonomy.record.{DnsRecordClass, DnsRecordType}
-
-import scala.concurrent.duration.FiniteDuration
+import fr.davit.taxonomy.record.{DnsRecordClass, DnsRecordType, DnsResourceRecord}
 
 final case class DnsQuestion(
     name: String,
@@ -26,4 +24,6 @@ final case class DnsQuestion(
     `class`: DnsRecordClass
 )
 
-final case class DnsResourceRecord(name: String, `type`: DnsRecordType, `class`: DnsRecordClass, ttl: FiniteDuration)
+final case class DnsAnswer(
+    record: DnsResourceRecord
+)

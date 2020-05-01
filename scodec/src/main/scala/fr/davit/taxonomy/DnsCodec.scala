@@ -18,10 +18,13 @@ package fr.davit.taxonomy
 
 import java.nio.charset.Charset
 
-import fr.davit.taxonomy.record.{DnsRecordClass, DnsRecordType}
+import fr.davit.taxonomy.record.{DnsRecordClass, DnsRecordType, DnsResourceRecord}
 import scodec.bits._
 import scodec.codecs._
 import scodec.{Attempt, Codec, DecodeResult, Err, SizeBound}
+import shapeless.HNil
+
+import scala.concurrent.duration._
 
 trait DnsCodec {
 
@@ -75,6 +78,19 @@ trait DnsCodec {
     (("qname" | qName) ::
       ("qtype" | dnsRecordType) ::
       ("qclass" | dnsRecordClass)).as[DnsQuestion]
+
+  // RR
+  val ttl: Codec[FiniteDuration] = uint32.xmap(_.seconds, _.toSeconds)
+  val rdata: Codec[Seq[Byte]]    = variableSizeBytes(uint16, bits).xmap(_.toByteArray.toSeq, BitVector.apply)
+
+  val dnsResourceRecord: Codec[DnsResourceRecord] = (("name" | qName) :: // TODO pointer support
+    ("type" | dnsRecordType) ::
+    ("class" | dnsRecordClass) ::
+    ("ttl" | ttl) ::
+    ("rdata" | rdata)).xmap(
+    hlist => (DnsResourceRecord.apply _).tupled(hlist.tupled),
+    rr => rr.name :: rr.`type` :: rr.`class` :: rr.ttl :: rr.data :: HNil
+  )
 
 }
 
