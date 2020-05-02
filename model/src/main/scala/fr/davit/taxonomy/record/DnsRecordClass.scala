@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-package fr.davit.taxonomy
+package fr.davit.taxonomy.record
 
-import fr.davit.taxonomy.record.{DnsRecordClass, DnsRecordType, DnsResourceRecord}
+final case class DnsRecordClass(code: Int) {
+  require(0 <= code && code < 256)
+}
 
-final case class DnsQuestion(
-    name: String,
-    `type`: DnsRecordType,
-    `class`: DnsRecordClass
-)
+object DnsRecordClass {
 
-final case class DnsAnswer(
-    record: DnsResourceRecord
-)
+  val Reserved: DnsRecordClass = DnsRecordClass(0)
+  val Internet: DnsRecordClass = DnsRecordClass(1)
+  val Chaos: DnsRecordClass    = DnsRecordClass(3)
+  val Hesiod: DnsRecordClass   = DnsRecordClass(4)
+  val Any: DnsRecordClass      = DnsRecordClass(255)
+
+}
