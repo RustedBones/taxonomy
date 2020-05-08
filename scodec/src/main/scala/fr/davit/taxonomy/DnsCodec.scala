@@ -18,11 +18,13 @@ package fr.davit.taxonomy
 
 import java.nio.charset.Charset
 
+import fr.davit.taxonomy.DnsMessage.DnsMessageImpl
+import fr.davit.taxonomy.record.DnsResourceRecord.DnsResourceRecordImpl
 import fr.davit.taxonomy.record.{DnsRecordClass, DnsRecordType, DnsResourceRecord}
 import scodec.bits._
 import scodec.codecs._
 import scodec.{Attempt, Codec, DecodeResult, Err, SizeBound}
-import shapeless.HNil
+import shapeless._
 
 import scala.concurrent.duration._
 
@@ -53,8 +55,11 @@ trait DnsCodec {
       ("arcount" | uint16)).as[DnsHeader]
   )
 
-  val labelSize: Codec[Int] = constantLenient(bin"00") ~> int(6) // first 2 bits are reserved
-  val label: Codec[String]  = variableSizeBytes(labelSize, string(ascii)).withToString("label")
+  val label: Codec[String] = constant(bin"00") ~> variableSizeBytes(int(6), string(ascii))
+
+  val labelPointer: Codec[String] = constant(bin"11") ~> int(14)
+    .xmap[String](_.toString, _.toInt)
+    .withToString("labelptr")
 
   val qName: Codec[String] = {
     val labels = filtered(
@@ -70,28 +75,51 @@ trait DnsCodec {
           }
       }
     )
-
     labels.xmap(_.mkString("."), _.split('.').toList)
   }
 
-  val dnsQuestion: Codec[DnsQuestion] =
+  val name: Codec[String] = Codec(
+    encoder = qName, // TODO write pointer
+    decoder = discriminated
+      .by(peek(bits(2)))
+      .typecase(bin"00", qName)
+      .typecase(bin"11", labelPointer)
+  )
+
+  val dnsQuestionSection: Codec[DnsQuestion] =
     (("qname" | qName) ::
       ("qtype" | dnsRecordType) ::
       ("qclass" | dnsRecordClass)).as[DnsQuestion]
 
-  // RR
   val ttl: Codec[FiniteDuration] = uint32.xmap(_.seconds, _.toSeconds)
-  val rdata: Codec[Seq[Byte]]    = variableSizeBytes(uint16, bits).xmap(_.toByteArray.toSeq, BitVector.apply)
+  val rdata: Codec[Vector[Byte]] = variableSizeBytes(uint16, bits).xmap(_.toByteArray.toVector, BitVector.apply)
 
-  val dnsResourceRecord: Codec[DnsResourceRecord] = (("name" | qName) :: // TODO pointer support
+  val dnsResourceRecord: Codec[DnsResourceRecord] = (("name" | name) ::
     ("type" | dnsRecordType) ::
     ("class" | dnsRecordClass) ::
     ("ttl" | ttl) ::
     ("rdata" | rdata)).xmap(
-    hlist => (DnsResourceRecord.apply _).tupled(hlist.tupled),
-    rr => rr.name :: rr.`type` :: rr.`class` :: rr.ttl :: rr.data :: HNil
+    Generic[DnsResourceRecordImpl].from(_),
+    rr => rr.name :: rr.`type` :: rr.`class` :: rr.ttl :: rr.data.toVector :: HNil
   )
 
+  val dnsMesage: Codec[DnsMessage] = dnsHeaderCodec
+    .flatPrepend { header =>
+      ("qdsection" | vectorOfN(provide(header.countQuestions), dnsQuestionSection)) ::
+        ("ansection" | vectorOfN(provide(header.countAnswerRecords), dnsResourceRecord)) ::
+        ("nssection" | vectorOfN(provide(header.countAuthorityRecords), dnsResourceRecord)) ::
+        ("arsection" | vectorOfN(provide(header.countAdditionalRecords), dnsResourceRecord))
+    }
+    .xmap(
+      Generic[DnsMessageImpl].from(_),
+      message =>
+        message.header ::
+          message.questions.toVector ::
+          message.answers.toVector ::
+          message.authorities.toVector ::
+          message.additionals.toVector ::
+          HNil
+    )
 }
 
 object DnsCodec extends DnsCodec
