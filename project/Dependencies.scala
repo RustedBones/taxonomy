@@ -15,7 +15,7 @@ object Dependencies {
   val ScodecStream = "org.scodec" %% "scodec-stream" % Versions.ScodecStream
 
   object Test {
-    val ScalaTest = "org.scalatest" %% "scalatest" % Versions.ScalaTest % "test"
+    val ScalaTest = "org.scalatest" %% "scalatest" % Versions.ScalaTest % "it,test"
   }
 
 }

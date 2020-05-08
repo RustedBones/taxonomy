@@ -67,15 +67,15 @@ trait DnsInternetRecord extends DnsResourceRecord {
   override def `class`: DnsRecordClass = DnsRecordClass.Internet
 }
 
-final case class DnsARecord(name: String, ttl: FiniteDuration, address: Inet4Address) extends DnsInternetRecord {
-  override def `type`: DnsRecordType     = DnsRecordType.A
+final case class DnsIpv4AddressRecord(name: String, ttl: FiniteDuration, address: Inet4Address) extends DnsInternetRecord {
+  override def `type`: DnsRecordType     = DnsRecordType.Ipv4Address
   override def data: immutable.Seq[Byte] = address.getAddress.toList
 }
 
-object DnsARecord {
+object DnsIpv4AddressRecord {
 
   def unapply(record: DnsResourceRecord): Option[(String, FiniteDuration, Inet4Address)] = {
-    if (record.`class` == DnsRecordClass.Internet && record.`type` == DnsRecordType.A) {
+    if (record.`class` == DnsRecordClass.Internet && record.`type` == DnsRecordType.Ipv4Address) {
       val address = InetAddress.getByAddress(null, record.data.toArray).asInstanceOf[Inet4Address]
       Some((record.name, record.ttl, address))
     } else {
@@ -85,15 +85,15 @@ object DnsARecord {
 
 }
 
-final case class DnsAAAARecord(name: String, ttl: FiniteDuration, address: Inet6Address) extends DnsInternetRecord {
-  override def `type`: DnsRecordType     = DnsRecordType.A
+final case class DnsIpv6AddressRecord(name: String, ttl: FiniteDuration, address: Inet6Address) extends DnsInternetRecord {
+  override def `type`: DnsRecordType     = DnsRecordType.Ipv4Address
   override def data: immutable.Seq[Byte] = address.getAddress.toList
 }
 
-object DnsAAAARecord {
+object DnsIpv6AddressRecord {
 
   def unapply(record: DnsResourceRecord): Option[(String, FiniteDuration, Inet6Address)] = {
-    if (record.`class` == DnsRecordClass.Internet && record.`type` == DnsRecordType.AAAA) {
+    if (record.`class` == DnsRecordClass.Internet && record.`type` == DnsRecordType.Ipv6Address) {
       val address = InetAddress.getByAddress(null, record.data.toArray).asInstanceOf[Inet6Address]
       Some((record.name, record.ttl, address))
     } else {

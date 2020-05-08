@@ -1,3 +1,5 @@
+import org.apache.ivy.core.module.descriptor.ConfigurationGroup
+
 // General info
 val username = "RustedBones"
 val repo     = "taxonomy"
@@ -43,6 +45,7 @@ lazy val `taxonomy-model` = (project in file("model"))
   .settings(commonSettings: _*)
 
 lazy val `taxonomy-scodec` = (project in file("scodec"))
+  .configs(IntegrationTest)
   .dependsOn(`taxonomy-model`)
   .settings(commonSettings: _*)
   .settings(
@@ -53,6 +56,7 @@ lazy val `taxonomy-scodec` = (project in file("scodec"))
   )
 
 lazy val `taxonomy-fs2` = (project in file("fs2"))
+  .configs(IntegrationTest)
   .dependsOn(`taxonomy-scodec`)
   .settings(commonSettings: _*)
   .settings(
