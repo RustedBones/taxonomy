@@ -1,5 +1,3 @@
-import org.apache.ivy.core.module.descriptor.ConfigurationGroup
-
 // General info
 val username = "RustedBones"
 val repo     = "taxonomy"
