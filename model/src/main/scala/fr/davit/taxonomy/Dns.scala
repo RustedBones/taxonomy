@@ -109,12 +109,12 @@ final case class DnsIpv4Lookup(id: Int, names: String*)
     extends DnsQuery(
       id,
       DnsOpCode.StandardQuery,
-      names.map(DnsQuestion(_, DnsRecordType.Ipv4Address, DnsRecordClass.Internet))
+      names.map(DnsQuestion(_, DnsRecordType.Ipv4Address, DnsRecordClass.Internet)).toVector
     )
 
 final case class DnsIpv6Lookup(id: Int, names: String*)
     extends DnsQuery(
       id,
       DnsOpCode.StandardQuery,
-      names.map(DnsQuestion(_, DnsRecordType.Ipv6Address, DnsRecordClass.Internet))
+      names.map(DnsQuestion(_, DnsRecordType.Ipv6Address, DnsRecordClass.Internet)).toVector
     )
