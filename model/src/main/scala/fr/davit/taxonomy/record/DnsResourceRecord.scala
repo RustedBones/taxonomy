@@ -67,7 +67,8 @@ trait DnsInternetRecord extends DnsResourceRecord {
   override def `class`: DnsRecordClass = DnsRecordClass.Internet
 }
 
-final case class DnsIpv4AddressRecord(name: String, ttl: FiniteDuration, address: Inet4Address) extends DnsInternetRecord {
+final case class DnsIpv4AddressRecord(name: String, ttl: FiniteDuration, address: Inet4Address)
+    extends DnsInternetRecord {
   override def `type`: DnsRecordType     = DnsRecordType.Ipv4Address
   override def data: immutable.Seq[Byte] = address.getAddress.toList
 }
@@ -85,7 +86,8 @@ object DnsIpv4AddressRecord {
 
 }
 
-final case class DnsIpv6AddressRecord(name: String, ttl: FiniteDuration, address: Inet6Address) extends DnsInternetRecord {
+final case class DnsIpv6AddressRecord(name: String, ttl: FiniteDuration, address: Inet6Address)
+    extends DnsInternetRecord {
   override def `type`: DnsRecordType     = DnsRecordType.Ipv4Address
   override def data: immutable.Seq[Byte] = address.getAddress.toList
 }
