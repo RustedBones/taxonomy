@@ -18,7 +18,6 @@ package fr.davit.taxonomy
 
 import enumeratum.ValueEnumMacros
 import enumeratum.values.{IntEnum, IntEnumEntry}
-import scala.language.experimental.macros
 
 import scala.collection.immutable
 
