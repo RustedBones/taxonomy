@@ -19,7 +19,6 @@ package fr.davit.taxonomy
 import java.net.{Inet4Address, Inet6Address, InetAddress}
 import java.nio.charset.Charset
 
-import fr.davit.taxonomy.DnsMessage.DnsMessageImpl
 import fr.davit.taxonomy.record._
 import scodec.bits._
 import scodec.codecs._
@@ -168,16 +167,13 @@ trait DnsCodec {
         ("nssection" | vectorOfN(provide(header.countAuthorityRecords), dnsResourceRecord)) ::
         ("arsection" | vectorOfN(provide(header.countAdditionalRecords), dnsResourceRecord))
     }
-    .xmap(
-      Generic[DnsMessageImpl].from(_),
-      message =>
-        message.header ::
-          message.questions.toVector ::
-          message.answers.toVector ::
-          message.authorities.toVector ::
-          message.additionals.toVector ::
-          HNil
-    )
+    .xmapc {
+      case header :: questions :: answers :: authorities :: additionals :: HNil =>
+        DnsMessage(header, questions, answers, authorities, additionals)
+    } { message =>
+      import message._
+      header :: questions.toVector :: answers.toVector :: authorities.toVector :: additionals.toVector :: HNil
+    }
 }
 
 object DnsCodec extends DnsCodec

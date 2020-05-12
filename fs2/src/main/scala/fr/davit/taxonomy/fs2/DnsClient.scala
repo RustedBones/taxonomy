@@ -19,15 +19,15 @@ package fr.davit.taxonomy.fs2
 import java.net.InetSocketAddress
 
 import cats.effect.{Blocker, Concurrent, ContextShift, Resource}
-import fr.davit.taxonomy.{DnsCodec, DnsMessage, DnsQuery}
+import fr.davit.taxonomy.{DnsCodec, DnsMessage}
 import fs2._
 import fs2.io.udp.{Packet, Socket, SocketGroup}
 import scodec.stream.{StreamDecoder, StreamEncoder}
 
 class DnsClient[F[_]: Concurrent: ContextShift](socket: Socket[F]) {
 
-  def send(address: InetSocketAddress, query: DnsQuery): Stream[F, Unit] =
-    Stream(query)
+  def send(address: InetSocketAddress, message: DnsMessage): Stream[F, Unit] =
+    Stream(message)
       .through(StreamEncoder.once(DnsCodec.dnsMesage).toPipeByte)
       .chunks
       .map(data => Packet(address, data))
@@ -39,8 +39,8 @@ class DnsClient[F[_]: Concurrent: ContextShift](socket: Socket[F]) {
       .flatMap(packet => Stream.chunk(packet.bytes))
       .through(StreamDecoder.once(DnsCodec.dnsMesage).toPipeByte)
 
-  def resolve(address: InetSocketAddress, query: DnsQuery): Stream[F, DnsMessage] =
-    send(address, query).drain ++ listen()
+  def resolve(address: InetSocketAddress, message: DnsMessage): Stream[F, DnsMessage] =
+    send(address, message).drain ++ listen()
 }
 
 object DnsClient {

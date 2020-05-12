@@ -4,7 +4,7 @@ import java.net.{Inet4Address, InetAddress, InetSocketAddress}
 
 import cats.effect._
 import fr.davit.taxonomy.record.{DnsARecordData, DnsRecordClass, DnsRecordType, DnsResourceRecord}
-import fr.davit.taxonomy.{DnsMessage, DnsQuery, DnsQuestion, DnsType}
+import fr.davit.taxonomy.{DnsMessage, DnsQuestion, DnsType}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -19,7 +19,7 @@ class DnsClientItSpec extends AnyFlatSpec with Matchers {
 
   "DnsClient" should "send DNS queries" in {
     val question = DnsQuestion("davit.fr", DnsRecordType.A, DnsRecordClass.Internet)
-    val query    = DnsQuery(id = 1, questions = Seq(question))
+    val query    = DnsMessage.query(id = 1, questions = Seq(question))
     val response = DnsClient
       .bind[IO]()
       .use(_.resolve(quad9DnsServer, query).compile.toList)
