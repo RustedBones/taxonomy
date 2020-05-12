@@ -3,8 +3,8 @@ package fr.davit.taxonomy.fs2
 import java.net.{Inet4Address, InetAddress, InetSocketAddress}
 
 import cats.effect._
-import fr.davit.taxonomy.record.DnsIpv4AddressRecord
-import fr.davit.taxonomy.{DnsIpv4Lookup, DnsMessage, DnsType}
+import fr.davit.taxonomy.record.{DnsARecordData, DnsRecordClass, DnsRecordType, DnsResourceRecord}
+import fr.davit.taxonomy.{DnsMessage, DnsQuery, DnsQuestion, DnsType}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -18,8 +18,10 @@ class DnsClientItSpec extends AnyFlatSpec with Matchers {
   implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 
   "DnsClient" should "send DNS queries" in {
-    val query = DnsIpv4Lookup(1, "davit.fr")
-    val response = DnsClient.bind[IO]()
+    val question = DnsQuestion("davit.fr", DnsRecordType.A, DnsRecordClass.Internet)
+    val query    = DnsQuery(id = 1, questions = Seq(question))
+    val response = DnsClient
+      .bind[IO]()
       .use(_.resolve(quad9DnsServer, query).compile.toList)
       .unsafeRunSync()
       .head
@@ -28,7 +30,7 @@ class DnsClientItSpec extends AnyFlatSpec with Matchers {
     response shouldBe DnsMessage(
       query.header.copy(`type` = DnsType.Response, isRecursionAvailable = true, countAnswerRecords = 1),
       query.questions,
-      Seq(DnsIpv4AddressRecord("12", 3.hours, ip)), // TODO fix label ptr
+      Seq(DnsResourceRecord("12", DnsRecordClass.Internet, 3.hours, DnsARecordData(ip))), // TODO fix label ptr
       Seq.empty,
       Seq.empty
     )

@@ -18,7 +18,7 @@ package fr.davit.taxonomy
 
 import java.net.{Inet4Address, InetAddress}
 
-import fr.davit.taxonomy.record.{DnsIpv4AddressRecord, DnsRecordClass, DnsRecordType}
+import fr.davit.taxonomy.record.{DnsARecordData, DnsRecordClass, DnsRecordType, DnsResourceRecord}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import scodec.bits._
@@ -36,7 +36,7 @@ class DnsCodecSpec extends AnyFlatSpec with Matchers {
       isTruncated = true,
       isRecursionDesired = false,
       isRecursionAvailable = true,
-      responseCode = DnsResponseCode(15),
+      responseCode = DnsResponseCode.Unassigned(15),
       countQuestions = 1,
       countAnswerRecords = 2,
       countAuthorityRecords = 3,
@@ -72,20 +72,21 @@ class DnsCodecSpec extends AnyFlatSpec with Matchers {
     DnsCodec.qName.decode(data).require.value shouldBe name
 
     // double check with name
-    DnsCodec.name.encode(name).require shouldBe data
-    DnsCodec.name.decode(data).require.value shouldBe name
+    DnsCodec.domainName.encode(name).require shouldBe data
+    DnsCodec.domainName.decode(data).require.value shouldBe name
   }
 
   it should "encode / decode A record" in {
-    val name    = "name"
-    val ttl     = 3.hours
-    val ipv4    = InetAddress.getByAddress(Array[Byte](1, 2, 3, 4)).asInstanceOf[Inet4Address]
-    val aRecord = DnsIpv4AddressRecord(name, ttl, ipv4)
+    val name        = "name"
+    val ttl         = 3.hours
+    val ipv4        = InetAddress.getByAddress(Array[Byte](1, 2, 3, 4)).asInstanceOf[Inet4Address]
+    val aRecordData = DnsARecordData(ipv4)
+    val aRecord     = DnsResourceRecord(name, DnsRecordClass.Internet, ttl, aRecordData)
 
     val data = (
       ByteVector(name.length.toByte) ++ ByteVector(name.getBytes(DnsCodec.ascii)) ++ ByteVector.fromByte(0) ++ // name
-        ByteVector.fromInt(DnsRecordType.Ipv4Address.code, 2) ++ // type
-        ByteVector.fromInt(DnsRecordClass.Internet.code, 2) ++ // class
+        ByteVector.fromInt(DnsRecordType.A.value, 2) ++ // type
+        ByteVector.fromInt(DnsRecordClass.Internet.value, 2) ++ // class
         ByteVector.fromLong(ttl.toSeconds, 4) ++ // ttl
         ByteVector.fromInt(4, 2) ++ ByteVector(ipv4.getAddress) // rdlength + rdata
     ).toBitVector

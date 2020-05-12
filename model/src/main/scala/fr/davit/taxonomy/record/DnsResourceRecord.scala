@@ -16,162 +16,59 @@
 
 package fr.davit.taxonomy.record
 
-import java.net.{Inet4Address, Inet6Address, InetAddress}
-import java.util.Objects
+import java.net.{Inet4Address, Inet6Address}
+
+import enumeratum.ValueEnumMacros
+import enumeratum.values.{IntEnum, IntEnumEntry}
 
 import scala.collection.immutable
 import scala.concurrent.duration.FiniteDuration
+import scala.language.experimental.macros
 
-trait DnsResourceRecord {
-  def name: String
-  def `type`: DnsRecordType
-  def `class`: DnsRecordClass
-  def ttl: FiniteDuration
-  def data: immutable.Seq[Byte]
+final case class DnsResourceRecord(
+    name: String,
+    `class`: DnsRecordClass,
+    ttl: FiniteDuration,
+    data: DnsRecordData
+)
 
-  override def equals(other: Any): Boolean = other match {
-    case that: DnsResourceRecord =>
-      this.name == that.name &&
-        this.`type` == that.`type` &&
-        this.`class` == that.`class` &&
-        this.ttl == that.ttl &&
-        this.data == that.data
-    case _ => false
-  }
+sealed trait DnsRecordClass extends IntEnumEntry
 
-  override def hashCode(): Int = Objects.hash(name, `type`, `class`, ttl, data)
+object DnsRecordClass extends IntEnum[DnsRecordClass] {
 
+  sealed abstract class Assigned(val value: Int) extends DnsRecordClass
+  final case class Unassigned(value: Int) extends DnsRecordClass
+
+  case object Reserved extends Assigned(0)
+  case object Internet extends Assigned(1)
+  case object Chaos extends Assigned(3)
+  case object Hesiod extends Assigned(4)
+  case object Any extends Assigned(255)
+
+  private def assignedValues: immutable.IndexedSeq[Assigned] =
+    macro ValueEnumMacros.findIntValueEntriesImpl[Assigned]
+
+  private def unassignedValues: immutable.IndexedSeq[Unassigned] =
+    (5 until 255).map(Unassigned)
+
+  override lazy val values: immutable.IndexedSeq[DnsRecordClass] =
+    assignedValues ++ unassignedValues
 }
 
-object DnsResourceRecord {
+abstract class DnsRecordData(val `type`: DnsRecordType)
 
-  private[taxonomy] case class DnsResourceRecordImpl(
-      name: String,
-      `type`: DnsRecordType,
-      `class`: DnsRecordClass,
-      ttl: FiniteDuration,
-      data: Vector[Byte]
-  ) extends DnsResourceRecord
+// format: off
+final case class DnsARecordData(address: Inet4Address) extends DnsRecordData(DnsRecordType.A)
+final case class DnsAAAARecordData(address: Inet6Address) extends DnsRecordData(DnsRecordType.AAAA)
+final case class DnsCNAMERecordData(cname: String) extends DnsRecordData(DnsRecordType.CNAME)
+final case class DnsHINFORecordData(cpu: String, os: String) extends DnsRecordData(DnsRecordType.HINFO)
+final case class DnsMXRecordData(preference: Int, exchange: String) extends DnsRecordData(DnsRecordType.MX)
+final case class DnsNAPTRRecordData(order: Int, preference: Int, flags: String, services: String, regexp: String, replacement: String) extends DnsRecordData(DnsRecordType.NAPTR)
+final case class DnsNSRecordData(nsdname: String) extends DnsRecordData(DnsRecordType.NS)
+final case class DnsPTRRecordData(ptrdname: String) extends DnsRecordData(DnsRecordType.PTR)
+final case class DnsSOARecordData(mname: String, rname: String, serial: Long, refresh: FiniteDuration, retry: FiniteDuration, expire: FiniteDuration, minimum: FiniteDuration) extends DnsRecordData(DnsRecordType.SOA)
+final case class DnsSRVRecordData(priority: Int, weight: Int, port: Int, target: String) extends DnsRecordData(DnsRecordType.SRV)
+final case class DnsTXTRecordData(txt: immutable.Seq[String]) extends DnsRecordData(DnsRecordType.TXT)
 
-  def apply(
-      name: String,
-      `type`: DnsRecordType,
-      `class`: DnsRecordClass,
-      ttl: FiniteDuration,
-      data: Seq[Byte]
-  ): DnsResourceRecord = DnsResourceRecordImpl(name, `type`, `class`, ttl, data.toVector)
-
-}
-
-trait DnsInternetRecord extends DnsResourceRecord {
-  override def `class`: DnsRecordClass = DnsRecordClass.Internet
-}
-
-final case class DnsIpv4AddressRecord(name: String, ttl: FiniteDuration, address: Inet4Address)
-    extends DnsInternetRecord {
-  override def `type`: DnsRecordType     = DnsRecordType.Ipv4Address
-  override def data: immutable.Seq[Byte] = address.getAddress.toList
-}
-
-object DnsIpv4AddressRecord {
-
-  def unapply(record: DnsResourceRecord): Option[(String, FiniteDuration, Inet4Address)] = {
-    if (record.`class` == DnsRecordClass.Internet && record.`type` == DnsRecordType.Ipv4Address) {
-      val address = InetAddress.getByAddress(null, record.data.toArray).asInstanceOf[Inet4Address]
-      Some((record.name, record.ttl, address))
-    } else {
-      None
-    }
-  }
-
-}
-
-final case class DnsIpv6AddressRecord(name: String, ttl: FiniteDuration, address: Inet6Address)
-    extends DnsInternetRecord {
-  override def `type`: DnsRecordType     = DnsRecordType.Ipv4Address
-  override def data: immutable.Seq[Byte] = address.getAddress.toList
-}
-
-object DnsIpv6AddressRecord {
-
-  def unapply(record: DnsResourceRecord): Option[(String, FiniteDuration, Inet6Address)] = {
-    if (record.`class` == DnsRecordClass.Internet && record.`type` == DnsRecordType.Ipv6Address) {
-      val address = InetAddress.getByAddress(null, record.data.toArray).asInstanceOf[Inet6Address]
-      Some((record.name, record.ttl, address))
-    } else {
-      None
-    }
-  }
-
-}
-
-//case class CNAME(name: String, ttl: FiniteDuration, cname: String) extends DnsInternetRecord {
-//  override def `type`: DnsRecordType     = DnsRecordType.A
-//  override def data: immutable.Seq[Byte] = ???
-//}
-//
-//case class DnsHINFORecord(name: String, ttl: FiniteDuration, cpu: String, os: String) extends DnsInternetRecord {
-//  override def `type`: DnsRecordType = ???
-//
-//  override def data: immutable.Seq[Byte] = ???
-//}
-//case class DnsMXRecord(name: String, ttl: FiniteDuration, preference: Int, exchange: String) extends DnsInternetRecord {
-//  override def `type`: DnsRecordType = ???
-//
-//  override def data: immutable.Seq[Byte] = ???
-//}
-//case class DnsNAPTRRecord(
-//    name: String,
-//    ttl: FiniteDuration,
-//    order: Int,
-//    preference: Int,
-//    flags: String,
-//    services: String,
-//    regexp: String,
-//    replacement: String
-//) extends DnsInternetRecord {
-//  override def `type`: DnsRecordType = ???
-//
-//  override def data: immutable.Seq[Byte] = ???
-//}
-//case class DnsNSRecord(name: String, ttl: FiniteDuration, nsdname: String) extends DnsInternetRecord {
-//  override def `type`: DnsRecordType = ???
-//
-//  override def data: immutable.Seq[Byte] = ???
-//}
-//case class DnsOPTRecord(name: String, ttl: FiniteDuration, options: List[String]) extends DnsInternetRecord {
-//  override def `type`: DnsRecordType = ???
-//
-//  override def data: immutable.Seq[Byte] = ???
-//}
-//case class DnsPTRRecord(name: String, ttl: FiniteDuration, ptrdname: String) extends DnsInternetRecord {
-//  override def `type`: DnsRecordType = ???
-//
-//  override def data: immutable.Seq[Byte] = ???
-//}
-//case class DnsSOARecord(
-//    name: String,
-//    ttl: FiniteDuration,
-//    mname: String,
-//    rname: String,
-//    serial: Long,
-//    refresh: Long,
-//    retry: Long,
-//    expire: Long,
-//    minimum: Long
-//) extends DnsInternetRecord {
-//  override def `type`: DnsRecordType = ???
-//
-//  override def data: immutable.Seq[Byte] = ???
-//}
-//case class DnsSRVRecord(name: String, ttl: FiniteDuration, priority: Int, weight: Int, port: Int, target: String)
-//    extends DnsInternetRecord {
-//  override def `type`: DnsRecordType = ???
-//
-//  override def data: immutable.Seq[Byte] = ???
-//}
-//case class DnsTXTRecord(name: String, ttl: FiniteDuration, txt: immutable.Seq[String]) extends DnsInternetRecord {
-//  override def `type`: DnsRecordType = ???
-//
-//  override def data: immutable.Seq[Byte] = ???
-//}
+final case class DnsRawRecordData(override val `type`: DnsRecordType, data: immutable.Seq[Byte]) extends DnsRecordData(`type`)
+// format: on

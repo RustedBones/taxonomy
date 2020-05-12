@@ -74,15 +74,20 @@ object DnsMessage {
   )
 }
 
-class DnsQuery(id: Int, opCode: DnsOpCode, override val questions: immutable.Seq[DnsQuestion]) extends DnsMessage {
+class DnsQuery(
+    id: Int,
+    opCode: DnsOpCode,
+    isRecursionDesired: Boolean,
+    override val questions: immutable.Seq[DnsQuestion]
+) extends DnsMessage {
 
   override def header: DnsHeader = DnsHeader(
     id,
     DnsType.Query,
     opCode,
     isAuthoritativeAnswer = false,
-    isTruncated = false, // TODO compute this
-    isRecursionDesired = true, // TODO parameter
+    isTruncated = false,
+    isRecursionDesired = isRecursionDesired,
     isRecursionAvailable = false,
     responseCode = DnsResponseCode.Success,
     countQuestions = questions.size,
@@ -100,21 +105,11 @@ class DnsQuery(id: Int, opCode: DnsOpCode, override val questions: immutable.Seq
 
 object DnsQuery {
 
-  def apply(id: Int, opCode: DnsOpCode, questions: Seq[DnsQuestion]): DnsQuery =
-    new DnsQuery(id, opCode, questions.toVector)
+  def apply(
+      id: Int = 0,
+      opCode: DnsOpCode = DnsOpCode.StandardQuery,
+      isRecursionDesired: Boolean = true,
+      questions: Seq[DnsQuestion] = Seq.empty
+  ): DnsQuery = new DnsQuery(id, opCode, isRecursionDesired, questions.toVector)
 
 }
-
-final case class DnsIpv4Lookup(id: Int, names: String*)
-    extends DnsQuery(
-      id,
-      DnsOpCode.StandardQuery,
-      names.map(DnsQuestion(_, DnsRecordType.Ipv4Address, DnsRecordClass.Internet)).toVector
-    )
-
-final case class DnsIpv6Lookup(id: Int, names: String*)
-    extends DnsQuery(
-      id,
-      DnsOpCode.StandardQuery,
-      names.map(DnsQuestion(_, DnsRecordType.Ipv6Address, DnsRecordClass.Internet)).toVector
-    )
