@@ -16,11 +16,10 @@
 
 package fr.davit.taxonomy
 
+import java.net.{Inet4Address, Inet6Address, InetAddress}
 import java.nio.charset.Charset
 
-import fr.davit.taxonomy.DnsMessage.DnsMessageImpl
-import fr.davit.taxonomy.record.DnsResourceRecord.DnsResourceRecordImpl
-import fr.davit.taxonomy.record.{DnsRecordClass, DnsRecordType, DnsResourceRecord}
+import fr.davit.taxonomy.record._
 import scodec.bits._
 import scodec.codecs._
 import scodec.{Attempt, Codec, DecodeResult, Err, SizeBound}
@@ -32,11 +31,14 @@ trait DnsCodec {
 
   val ascii: Charset = Charset.forName("US-ASCII")
 
-  val dnsType: Codec[DnsType]                 = bool.xmap(DnsType.apply, _.code == 1)
-  val dnsOpCode: Codec[DnsOpCode]             = uint4.xmap(DnsOpCode.apply, _.code)
-  val dnsResponseCode: Codec[DnsResponseCode] = uint4.xmap(DnsResponseCode.apply, _.code)
-  val dnsRecordType: Codec[DnsRecordType]     = uint16.xmap(DnsRecordType.apply, _.code)
-  val dnsRecordClass: Codec[DnsRecordClass]   = uint16.xmap(DnsRecordClass.apply, _.code)
+  def size16(size: Int): Codec[Unit] = constant(BitVector.fromInt(size, 16))
+
+  val characterString: Codec[String]          = variableSizeBytes(uint8, string(ascii))
+  val dnsType: Codec[DnsType]                 = uint(1).xmap(DnsType.withValue, _.value)
+  val dnsOpCode: Codec[DnsOpCode]             = uint4.xmap(DnsOpCode.withValue, _.value)
+  val dnsResponseCode: Codec[DnsResponseCode] = uint4.xmap(DnsResponseCode.withValue, _.value)
+  val dnsRecordType: Codec[DnsRecordType]     = uint16.xmap(DnsRecordType.withValue, _.value)
+  val dnsRecordClass: Codec[DnsRecordClass]   = uint16.xmap(DnsRecordClass.withValue, _.value)
 
   val dnsHeaderCodec: Codec[DnsHeader] = fixedSizeBytes(
     12,
@@ -78,7 +80,7 @@ trait DnsCodec {
     labels.xmap(_.mkString("."), _.split('.').toList)
   }
 
-  val name: Codec[String] = Codec(
+  val domainName: Codec[String] = Codec(
     encoder = qName, // TODO write pointer
     decoder = discriminated
       .by(peek(bits(2)))
@@ -92,16 +94,71 @@ trait DnsCodec {
       ("qclass" | dnsRecordClass)).as[DnsQuestion]
 
   val ttl: Codec[FiniteDuration] = uint32.xmap(_.seconds, _.toSeconds)
-  val rdata: Codec[Vector[Byte]] = variableSizeBytes(uint16, bits).xmap(_.toByteArray.toVector, BitVector.apply)
 
-  val dnsResourceRecord: Codec[DnsResourceRecord] = (("name" | name) ::
-    ("type" | dnsRecordType) ::
-    ("class" | dnsRecordClass) ::
-    ("ttl" | ttl) ::
-    ("rdata" | rdata)).xmap(
-    Generic[DnsResourceRecordImpl].from(_),
-    rr => rr.name :: rr.`type` :: rr.`class` :: rr.ttl :: rr.data.toVector :: HNil
+  val ipv4: Codec[Inet4Address] = bytesStrict(4)
+    .xmap[Inet4Address](
+      bytes => InetAddress.getByAddress(bytes.toArray).asInstanceOf[Inet4Address],
+      ip => ByteVector(ip.getAddress)
+    )
+
+  val ipv6: Codec[Inet6Address] = bytesStrict(16).xmap(
+    bytes => InetAddress.getByAddress(bytes.toArray).asInstanceOf[Inet6Address],
+    ip => ByteVector(ip.getAddress)
   )
+
+  val dnsARecordData: Codec[DnsARecordData]         = ipv4.as[DnsARecordData]
+  val dnsAAAARecordData: Codec[DnsAAAARecordData]   = ipv6.as[DnsAAAARecordData]
+  val dnsCNAMERecordData: Codec[DnsCNAMERecordData] = domainName.as[DnsCNAMERecordData]
+  val dnsHINFORecordData: Codec[DnsHINFORecordData] = (characterString :: characterString).as[DnsHINFORecordData]
+  val dnsMXRecordData: Codec[DnsMXRecordData]       = (uint16 :: domainName).as[DnsMXRecordData]
+
+  val dnsNAPTRRecordData: Codec[DnsNAPTRRecordData] =
+    (uint16 :: uint16 :: characterString :: characterString :: characterString :: domainName).as[DnsNAPTRRecordData]
+  val dnsNSRecordData: Codec[DnsNSRecordData]   = domainName.as[DnsNSRecordData]
+  val dnsPTRRecordData: Codec[DnsPTRRecordData] = domainName.as[DnsPTRRecordData]
+
+  val dnsSOARecordData: Codec[DnsSOARecordData] =
+    (domainName :: domainName :: uint32 :: ttl :: ttl :: ttl :: ttl).as[DnsSOARecordData]
+  val dnsSRVRecordData: Codec[DnsSRVRecordData] = (uint16 :: uint16 :: uint16 :: qName).as[DnsSRVRecordData]
+  val dnsTXTRecordData: Codec[DnsTXTRecordData] = vector(characterString).xmap(DnsTXTRecordData, _.txt.toVector)
+
+  def dnsRawRecordData(recordType: DnsRecordType): Codec[DnsRawRecordData] =
+    variableSizeBytes(uint16, vector(byte)).xmap(DnsRawRecordData(recordType, _), _.data.toVector)
+
+  def dnsRecordData(recordType: DnsRecordType): DiscriminatorCodec[DnsRecordData, DnsRecordType] =
+    discriminated[DnsRecordData]
+      .by(provide(recordType))
+      .typecase(DnsRecordType.A, dnsARecordData)
+      .typecase(DnsRecordType.AAAA, dnsAAAARecordData)
+      .typecase(DnsRecordType.CNAME, dnsCNAMERecordData)
+      .typecase(DnsRecordType.HINFO, dnsHINFORecordData)
+      .typecase(DnsRecordType.MX, dnsMXRecordData)
+      .typecase(DnsRecordType.NAPTR, dnsNAPTRRecordData)
+      .typecase(DnsRecordType.NS, dnsNSRecordData)
+      .typecase(DnsRecordType.PTR, dnsPTRRecordData)
+      .typecase(DnsRecordType.SOA, dnsSOARecordData)
+      .typecase(DnsRecordType.SRV, dnsSRVRecordData)
+
+  def rdata(recordType: DnsRecordType): Codec[DnsRecordData] =
+    variableSizeBytes(
+      uint16,
+      discriminatorFallback(dnsRawRecordData(recordType), dnsRecordData(recordType)).xmapc {
+        case Left(rr)  => rr
+        case Right(rr) => rr
+      } {
+        case rr: DnsRawRecordData => Left(rr)
+        case rr: DnsRecordData    => Right(rr)
+      }
+    )
+
+  val dnsResourceRecord: Codec[DnsResourceRecord] = (("name" | domainName) :: ("type" | dnsRecordType))
+    .consume[DnsResourceRecord] {
+      case name :: recordType :: HNil =>
+        (provide(name) :: ("class" | dnsRecordClass) :: ("ttl" | ttl) :: ("rdata" | rdata(recordType)))
+          .as[DnsResourceRecord]
+    } { rr =>
+      rr.name :: rr.data.`type` :: HNil
+    }
 
   val dnsMesage: Codec[DnsMessage] = dnsHeaderCodec
     .flatPrepend { header =>
@@ -110,16 +167,13 @@ trait DnsCodec {
         ("nssection" | vectorOfN(provide(header.countAuthorityRecords), dnsResourceRecord)) ::
         ("arsection" | vectorOfN(provide(header.countAdditionalRecords), dnsResourceRecord))
     }
-    .xmap(
-      Generic[DnsMessageImpl].from(_),
-      message =>
-        message.header ::
-          message.questions.toVector ::
-          message.answers.toVector ::
-          message.authorities.toVector ::
-          message.additionals.toVector ::
-          HNil
-    )
+    .xmapc {
+      case header :: questions :: answers :: authorities :: additionals :: HNil =>
+        DnsMessage(header, questions, answers, authorities, additionals)
+    } { message =>
+      import message._
+      header :: questions.toVector :: answers.toVector :: authorities.toVector :: additionals.toVector :: HNil
+    }
 }
 
 object DnsCodec extends DnsCodec

@@ -41,6 +41,11 @@ lazy val `taxonomy` = (project in file("."))
 
 lazy val `taxonomy-model` = (project in file("model"))
   .settings(commonSettings: _*)
+  .settings(
+    libraryDependencies ++= Seq(
+      Dependencies.Enumeratum
+    )
+  )
 
 lazy val `taxonomy-scodec` = (project in file("scodec"))
   .configs(IntegrationTest)

@@ -16,51 +16,74 @@
 
 package fr.davit.taxonomy
 
-final case class DnsType(code: Int) {
-  require(code == 0 || code == 1)
+import enumeratum.ValueEnumMacros
+import enumeratum.values.{IntEnum, IntEnumEntry}
+
+import scala.collection.immutable
+
+sealed abstract class DnsType(val value: Int) extends IntEnumEntry
+
+object DnsType extends IntEnum[DnsType] {
+
+  case object Query extends DnsType(0)
+  case object Response extends DnsType(1)
+
+  override lazy val values: immutable.IndexedSeq[DnsType] = findValues
 }
 
-object DnsType {
+sealed trait DnsOpCode extends IntEnumEntry
 
-  val Query: DnsType    = DnsType(0)
-  val Response: DnsType = DnsType(1)
+object DnsOpCode extends IntEnum[DnsOpCode] {
 
-  def apply(code: Boolean): DnsType = DnsType(if (code) 1 else 0)
+  sealed abstract class Assigned(val value: Int) extends DnsOpCode
+  final case class Unassigned(value: Int) extends DnsOpCode
+
+  case object StandardQuery extends Assigned(0)
+  case object InverseQuery extends Assigned(1)
+  case object ServerStatusRequest extends Assigned(2)
+
+  case object Notify extends Assigned(4)
+  case object Update extends Assigned(5)
+  case object DnsStatefulOperations extends Assigned(6)
+
+  private def assignedValues: immutable.IndexedSeq[Assigned] =
+    macro ValueEnumMacros.findIntValueEntriesImpl[Assigned]
+
+  private def unassignedValues: immutable.IndexedSeq[Unassigned] =
+    Unassigned(3) +: (7 until 16).map(Unassigned)
+
+  override def values: immutable.IndexedSeq[DnsOpCode] =
+    assignedValues ++ unassignedValues
 }
 
-final case class DnsOpCode(code: Int) {
-  require(0 <= code && code < 16)
-}
+sealed trait DnsResponseCode extends IntEnumEntry
 
-object DnsOpCode {
+object DnsResponseCode extends IntEnum[DnsResponseCode] {
 
-  val StandardQuery: DnsOpCode         = DnsOpCode(0)
-  val InverseQuery: DnsOpCode          = DnsOpCode(1)
-  val ServerStatusRequest: DnsOpCode   = DnsOpCode(2)
-  val Notify: DnsOpCode                = DnsOpCode(4)
-  val Update: DnsOpCode                = DnsOpCode(5)
-  val DnsStatefulOperations: DnsOpCode = DnsOpCode(5)
+  sealed abstract class Assigned(val value: Int) extends DnsResponseCode
+  final case class Unassigned(value: Int) extends DnsResponseCode
 
-}
+  case object Success extends Assigned(0)
+  case object FormatError extends Assigned(1)
+  case object ServerFailure extends Assigned(2)
+  case object NonExistentDomain extends Assigned(3)
+  case object NotImplemented extends Assigned(4)
+  case object Refused extends Assigned(5)
+  case object ExtraDomain extends Assigned(6)
+  case object ExtraRRSet extends Assigned(7)
+  case object NonExistentRRSet extends Assigned(8)
+  case object NotAuth extends Assigned(9)
+  case object NotZone extends Assigned(10)
+  case object DsoTypeNotImplemented extends Assigned(11)
 
-final case class DnsResponseCode(code: Int) {
-  require(0 <= code && code < 16)
-}
+  private def assignedValues: immutable.IndexedSeq[Assigned] =
+    macro ValueEnumMacros.findIntValueEntriesImpl[Assigned]
 
-object DnsResponseCode {
+  private def unassignedValues: immutable.IndexedSeq[Unassigned] =
+    (12 until 16).map(Unassigned)
 
-  val Success: DnsResponseCode               = DnsResponseCode(0)
-  val FormatError: DnsResponseCode           = DnsResponseCode(1)
-  val ServerFailure: DnsResponseCode         = DnsResponseCode(2)
-  val NonExistentDomain: DnsResponseCode     = DnsResponseCode(3)
-  val NotImplemented: DnsResponseCode        = DnsResponseCode(4)
-  val Refused: DnsResponseCode               = DnsResponseCode(5)
-  val ExtraDomain: DnsResponseCode           = DnsResponseCode(6)
-  val ExtraRRSet: DnsResponseCode            = DnsResponseCode(7)
-  val NonExistentRRSet: DnsResponseCode      = DnsResponseCode(8)
-  val NotAuth: DnsResponseCode               = DnsResponseCode(9)
-  val NotZone: DnsResponseCode               = DnsResponseCode(10)
-  val DsoTypeNotImplemented: DnsResponseCode = DnsResponseCode(11)
+  override lazy val values: immutable.IndexedSeq[DnsResponseCode] =
+    assignedValues ++ unassignedValues
 }
 
 final case class DnsHeader(
