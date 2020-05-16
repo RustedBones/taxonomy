@@ -24,8 +24,21 @@ import org.scalatest.matchers.should.Matchers
 import scodec.bits._
 
 import scala.concurrent.duration._
+import scala.io.Source
+import scala.util.control.NonFatal
 
 class DnsCodecSpec extends AnyFlatSpec with Matchers {
+
+  def resourceBin(path: String): BitVector = {
+    val responseInputStream = getClass.getResourceAsStream(path)
+    try {
+      BitVector.fromInputStream(responseInputStream)
+    } catch {
+      case NonFatal(e) =>
+        responseInputStream.close()
+        throw e
+    }
+  }
 
   "DnsCodec" should "encode / decode dns header" in {
     val header = DnsHeader(
@@ -55,10 +68,10 @@ class DnsCodecSpec extends AnyFlatSpec with Matchers {
     // format: on
 
     DnsCodec.dnsHeaderCodec.encode(header).require shouldBe data
-    DnsCodec.dnsHeaderCodec.decode(data).require.value shouldBe header
+    DnsCodec.dnsHeaderCodec.complete.decode(data).require.value shouldBe header
   }
 
-  it should "encode / decode domain query name" in {
+  it should "encode / decode domain name" in {
     val name = "www.example.com"
 
     val data = (
@@ -68,12 +81,8 @@ class DnsCodecSpec extends AnyFlatSpec with Matchers {
         ByteVector.fromByte(0) // nul
     ).toBitVector
 
-    DnsCodec.qName.encode(name).require shouldBe data
-    DnsCodec.qName.decode(data).require.value shouldBe name
-
-    // double check with name
     DnsCodec.domainName.encode(name).require shouldBe data
-    DnsCodec.domainName.decode(data).require.value shouldBe name
+    DnsCodec.domainName.complete.decode(data).require.value shouldBe name
   }
 
   it should "encode / decode A record" in {
@@ -92,7 +101,63 @@ class DnsCodecSpec extends AnyFlatSpec with Matchers {
     ).toBitVector
 
     DnsCodec.dnsResourceRecord.encode(aRecord).require shouldBe data
-    DnsCodec.dnsResourceRecord.decode(data).require.value shouldBe aRecord
+    DnsCodec.dnsResourceRecord.complete.decode(data).require.value shouldBe aRecord
+  }
+
+  it should "encode / decode DNS messages" in {
+    val header = DnsHeader(
+      id = 1,
+      `type` = DnsType.Query,
+      opCode = DnsOpCode.StandardQuery,
+      isAuthoritativeAnswer = false,
+      isTruncated = false,
+      isRecursionDesired = true,
+      isRecursionAvailable = false,
+      responseCode = DnsResponseCode.Success,
+      countQuestions = 1,
+      countAnswerRecords = 0,
+      countAuthorityRecords = 0,
+      countAdditionalRecords = 0
+    )
+    val question = DnsQuestion(
+      name = "davit.fr",
+      `type` = DnsRecordType.A,
+      `class` = DnsRecordClass.Internet
+    )
+
+    val query = DnsMessage(
+      header,
+      List(question),
+      List.empty,
+      List.empty,
+      List.empty
+    )
+    val queryData = resourceBin("/query_davit_fr.bin")
+    DnsCodec.dnsMesage.encode(query).require shouldBe queryData
+    DnsCodec.dnsMesage.complete.decode(queryData).require.value shouldBe query
+
+    val answer = DnsResourceRecord(
+      name = "12", // TODO pointer
+      `class` = DnsRecordClass.Internet,
+      3.hours,
+      DnsARecordData(InetAddress.getByName("217.70.184.38").asInstanceOf[Inet4Address])
+    )
+    val response = DnsMessage(
+      header.copy(
+        `type` = DnsType.Response,
+        isRecursionDesired = true,
+        isRecursionAvailable = true,
+        countAnswerRecords = 1
+      ),
+      List(question),
+      List(answer),
+      List.empty,
+      List.empty
+    )
+
+    val data = resourceBin("/response_davit_fr.bin")
+    // DnsCodec.dnsMesage.encode(response).require shouldBe data TODO pointer
+    DnsCodec.dnsMesage.complete.decode(data).require.value shouldBe response
   }
 
 }

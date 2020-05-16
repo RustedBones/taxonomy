@@ -17,14 +17,12 @@ class DnsClientItSpec extends AnyFlatSpec with Matchers {
 
   implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 
-  "DnsClient" should "send DNS queries" in {
+  "DnsFs2" should "lookup DNS queries" in {
     val question = DnsQuestion("davit.fr", DnsRecordType.A, DnsRecordClass.Internet)
     val query    = DnsMessage.query(id = 1, questions = Seq(question))
-    val response = DnsClient
-      .bind[IO]()
-      .use(_.resolve(quad9DnsServer, query).compile.toList)
+    val response = DnsFs2
+      .resolve[IO](DnsPacket(quad9DnsServer, query))
       .unsafeRunSync()
-      .head
 
     val ip = InetAddress.getByName("217.70.184.38").asInstanceOf[Inet4Address]
     response shouldBe DnsMessage(

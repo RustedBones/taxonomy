@@ -20,12 +20,6 @@ import fr.davit.taxonomy.record.{DnsRecordClass, DnsRecordType, DnsResourceRecor
 
 import scala.collection.immutable
 
-final case class DnsQuestion(
-    name: String,
-    `type`: DnsRecordType,
-    `class`: DnsRecordClass
-)
-
 final case class DnsMessage(
     header: DnsHeader,
     questions: immutable.Seq[DnsQuestion],
