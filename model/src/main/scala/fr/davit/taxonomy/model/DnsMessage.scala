@@ -14,17 +14,11 @@
  * limitations under the License.
  */
 
-package fr.davit.taxonomy
+package fr.davit.taxonomy.model
 
-import fr.davit.taxonomy.record.{DnsRecordClass, DnsRecordType, DnsResourceRecord}
+import fr.davit.taxonomy.model.record.DnsResourceRecord
 
 import scala.collection.immutable
-
-final case class DnsQuestion(
-    name: String,
-    `type`: DnsRecordType,
-    `class`: DnsRecordClass
-)
 
 final case class DnsMessage(
     header: DnsHeader,

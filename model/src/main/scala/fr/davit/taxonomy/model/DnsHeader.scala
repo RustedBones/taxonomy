@@ -14,12 +14,27 @@
  * limitations under the License.
  */
 
-package fr.davit.taxonomy
+package fr.davit.taxonomy.model
 
 import enumeratum.ValueEnumMacros
 import enumeratum.values.{IntEnum, IntEnumEntry}
 
 import scala.collection.immutable
+
+final case class DnsHeader(
+    id: Int,
+    `type`: DnsType,
+    opCode: DnsOpCode,
+    isAuthoritativeAnswer: Boolean,
+    isTruncated: Boolean,
+    isRecursionDesired: Boolean,
+    isRecursionAvailable: Boolean,
+    responseCode: DnsResponseCode,
+    countQuestions: Int,
+    countAnswerRecords: Int,
+    countAuthorityRecords: Int,
+    countAdditionalRecords: Int
+)
 
 sealed abstract class DnsType(val value: Int) extends IntEnumEntry
 
@@ -85,18 +100,3 @@ object DnsResponseCode extends IntEnum[DnsResponseCode] {
   override lazy val values: immutable.IndexedSeq[DnsResponseCode] =
     assignedValues ++ unassignedValues
 }
-
-final case class DnsHeader(
-    id: Int,
-    `type`: DnsType,
-    opCode: DnsOpCode,
-    isAuthoritativeAnswer: Boolean,
-    isTruncated: Boolean,
-    isRecursionDesired: Boolean,
-    isRecursionAvailable: Boolean,
-    responseCode: DnsResponseCode,
-    countQuestions: Int,
-    countAnswerRecords: Int,
-    countAuthorityRecords: Int,
-    countAdditionalRecords: Int
-)
