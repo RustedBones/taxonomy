@@ -14,17 +14,19 @@
  * limitations under the License.
  */
 
-package fr.davit.taxonomy
+package fr.davit.taxonomy.scodec
 
 import java.net.{Inet4Address, InetAddress}
 
-import fr.davit.taxonomy.record.{DnsARecordData, DnsRecordClass, DnsRecordType, DnsResourceRecord}
+import fr.davit.taxonomy.model.record.{DnsARecordData, DnsRecordClass, DnsRecordType, DnsResourceRecord}
+import fr.davit.taxonomy.model._
+import fr.davit.taxonomy.scodec.DnsCodec.DnsBits
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import scodec.bits._
+import scodec.{Attempt, Err}
 
 import scala.concurrent.duration._
-import scala.io.Source
 import scala.util.control.NonFatal
 
 class DnsCodecSpec extends AnyFlatSpec with Matchers {
@@ -80,9 +82,36 @@ class DnsCodecSpec extends AnyFlatSpec with Matchers {
         ByteVector.fromByte(3) ++ ByteVector("com".getBytes(DnsCodec.ascii)) ++
         ByteVector.fromByte(0) // nul
     ).toBitVector
+    implicit val dnsBit: DnsBits = DnsBits(data)
 
     DnsCodec.domainName.encode(name).require shouldBe data
     DnsCodec.domainName.complete.decode(data).require.value shouldBe name
+  }
+
+  it should "decode domain pointer" in {
+    val name = "www.example.com"
+
+    val data = (
+      ByteVector.fill(6)(0) ++ // fake header
+        ByteVector.fromByte(7) ++ ByteVector("example".getBytes(DnsCodec.ascii)) ++
+        ByteVector.fromByte(3) ++ ByteVector("com".getBytes(DnsCodec.ascii)) ++
+        ByteVector.fromByte(0) ++
+        ByteVector.fromByte(3) ++ ByteVector("www".getBytes(DnsCodec.ascii)) ++
+        ByteVector.fromByte(192.toByte) ++ ByteVector.fromByte(6)
+    ).toBitVector
+    val dnsBit: DnsBits = DnsBits(data)
+    DnsCodec.domainName(dnsBit).complete.decode(data.drop((6 + 8 + 4 + 1) * 8)).require.value shouldBe name
+  }
+
+  it should "detect name pointer cycle" in {
+    val data = (
+      ByteVector.fromByte(5) ++ ByteVector("cycle".getBytes(DnsCodec.ascii)) ++
+        ByteVector.fromByte(192.toByte) ++ ByteVector.fromByte(0)
+    ).toBitVector
+    val dnsBit: DnsBits = DnsBits(data)
+    DnsCodec.domainName(dnsBit).complete.decode(data) shouldBe Attempt.failure(
+      Err("Domain name pointer cycle detected")
+    )
   }
 
   it should "encode / decode A record" in {
@@ -99,6 +128,7 @@ class DnsCodecSpec extends AnyFlatSpec with Matchers {
         ByteVector.fromLong(ttl.toSeconds, 4) ++ // ttl
         ByteVector.fromInt(4, 2) ++ ByteVector(ipv4.getAddress) // rdlength + rdata
     ).toBitVector
+    implicit val dnsBit: DnsBits = DnsBits(data)
 
     DnsCodec.dnsResourceRecord.encode(aRecord).require shouldBe data
     DnsCodec.dnsResourceRecord.complete.decode(data).require.value shouldBe aRecord
@@ -137,7 +167,7 @@ class DnsCodecSpec extends AnyFlatSpec with Matchers {
     DnsCodec.dnsMesage.complete.decode(queryData).require.value shouldBe query
 
     val answer = DnsResourceRecord(
-      name = "12", // TODO pointer
+      name = "davit.fr",
       `class` = DnsRecordClass.Internet,
       3.hours,
       DnsARecordData(InetAddress.getByName("217.70.184.38").asInstanceOf[Inet4Address])
@@ -156,7 +186,7 @@ class DnsCodecSpec extends AnyFlatSpec with Matchers {
     )
 
     val data = resourceBin("/response_davit_fr.bin")
-    // DnsCodec.dnsMesage.encode(response).require shouldBe data TODO pointer
+    // DnsCodec.dnsMesage.encode(response).require shouldBe data
     DnsCodec.dnsMesage.complete.decode(data).require.value shouldBe response
   }
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package fr.davit.taxonomy.record
+package fr.davit.taxonomy.model.record
 
 import enumeratum.ValueEnumMacros
 import enumeratum.values.{IntEnum, IntEnumEntry}

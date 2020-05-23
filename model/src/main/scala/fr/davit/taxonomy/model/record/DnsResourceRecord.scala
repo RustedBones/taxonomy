@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package fr.davit.taxonomy.record
+package fr.davit.taxonomy.model.record
 
 import java.net.{Inet4Address, Inet6Address}
 

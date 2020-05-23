@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package fr.davit.taxonomy
+package fr.davit.taxonomy.model
 
-import fr.davit.taxonomy.record.{DnsRecordClass, DnsRecordType, DnsResourceRecord}
+import fr.davit.taxonomy.model.record.DnsResourceRecord
 
 import scala.collection.immutable
 

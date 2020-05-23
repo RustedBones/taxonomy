@@ -20,14 +20,12 @@ import java.net.{InetAddress, InetSocketAddress, NetworkInterface, ProtocolFamil
 
 import cats.effect._
 import cats.implicits._
-import cats.syntax._
 import fr.davit.taxonomy.fs2.DnsSocketOptions.MulticastGroup
-import fr.davit.taxonomy.{DnsCodec, DnsMessage}
+import fr.davit.taxonomy.model.DnsMessage
+import fr.davit.taxonomy.scodec.DnsCodec
 import fs2._
 import fs2.io.udp.{Packet, Socket, SocketGroup}
 import scodec.stream.{StreamDecoder, StreamEncoder}
-
-import scala.collection.immutable
 
 final case class DnsPacket(address: InetSocketAddress, query: DnsMessage)
 
@@ -40,7 +38,7 @@ final case class DnsSocketOptions(
     multicastInterface: Option[NetworkInterface] = None,
     multicastTTL: Option[Int] = None,
     multicastLoopback: Boolean = true,
-    multicastGroups: immutable.Seq[MulticastGroup] = List.empty
+    multicastGroups: List[MulticastGroup] = List.empty
 )
 
 object DnsSocketOptions {
@@ -51,37 +49,17 @@ object DnsSocketOptions {
 
 }
 
-trait Dns {
+object Dns {
 
-  def resolve[F[_]: Concurrent: ContextShift](
-      packet: DnsPacket,
-      port: Int = 0,
-      options: DnsSocketOptions = DnsSocketOptions.Defaults
-  ): F[DnsMessage]
-
-  def stream[F[_]: Concurrent: ContextShift](
-      input: Stream[F, DnsPacket],
-      port: Int = 0,
-      options: DnsSocketOptions = DnsSocketOptions.Defaults
-  ): Stream[F, Unit]
-
-  def listen[F[_]: Concurrent: ContextShift](
-      port: Int = 0,
-      options: DnsSocketOptions = DnsSocketOptions.Defaults
-  ): Stream[F, DnsMessage]
-}
-
-object DnsFs2 extends Dns {
-
-  def udpSocket[F[_]: Concurrent: ContextShift](port: Int, options: DnsSocketOptions): Resource[F, Socket[F]] =
-    for {
+  def udpSocket[F[_]: Concurrent: ContextShift](port: Int, options: DnsSocketOptions): Resource[F, Socket[F]] = {
+    (for {
       blocker     <- Blocker[F]
       socketGroup <- SocketGroup[F](blocker)
       socket      <- socketGroup.open(new InetSocketAddress(port))
-      // _ <- options.multicastGroups.map(g => socket.join(g.group, g.interface)).sequence
-    } yield socket
+    } yield socket).evalTap(s => options.multicastGroups.traverse(g => s.join(g.group, g.interface).void))
+  }
 
-  override def resolve[F[_]: Concurrent: ContextShift](
+  def resolve[F[_]: Concurrent: ContextShift](
       packet: DnsPacket,
       port: Int = 0,
       options: DnsSocketOptions = DnsSocketOptions.Defaults
@@ -90,13 +68,13 @@ object DnsFs2 extends Dns {
       for {
         data <- Sync[F].delay(DnsCodec.dnsMesage.encode(packet.query).require)
         datagram = Packet(packet.address, Chunk.byteVector(data.toByteVector))
-        _ <- socket.write(datagram)
-        p <- socket.read()
+        _       <- socket.write(datagram)
+        p       <- socket.read()
         message <- Sync[F].delay(DnsCodec.dnsMesage.decode(p.bytes.toByteVector.toBitVector).require.value)
       } yield message
     }
 
-  override def stream[F[_]: Concurrent: ContextShift](
+  def stream[F[_]: Concurrent: ContextShift](
       input: Stream[F, DnsPacket],
       port: Int = 0,
       options: DnsSocketOptions = DnsSocketOptions.Defaults
@@ -111,7 +89,7 @@ object DnsFs2 extends Dns {
         .through(socket.writes())
     } yield ()
 
-  override def listen[F[_]: Concurrent: ContextShift](
+  def listen[F[_]: Concurrent: ContextShift](
       port: Int = 0,
       options: DnsSocketOptions = DnsSocketOptions.Defaults
   ): Stream[F, DnsMessage] =
