@@ -55,7 +55,17 @@ object Dns {
     (for {
       blocker     <- Blocker[F]
       socketGroup <- SocketGroup[F](blocker)
-      socket      <- socketGroup.open(new InetSocketAddress(port))
+      socket <- socketGroup.open(
+        new InetSocketAddress(port),
+        options.reuseAddress,
+        options.sendBufferSize,
+        options.receiveBufferSize,
+        options.allowBroadcast,
+        options.protocolFamily,
+        options.multicastInterface,
+        options.multicastTTL,
+        options.multicastLoopback
+      )
     } yield socket).evalTap(s => options.multicastGroups.traverse(g => s.join(g.group, g.interface).void))
   }
 
