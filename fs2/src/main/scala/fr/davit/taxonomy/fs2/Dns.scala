@@ -85,10 +85,9 @@ object Dns {
     }
 
   def stream[F[_]: Concurrent: ContextShift](
-      input: Stream[F, DnsPacket],
       port: Int = 0,
       options: DnsSocketOptions = DnsSocketOptions.Defaults
-  ): Stream[F, Unit] =
+  ): Pipe[F, DnsPacket, Unit] = input =>
     for {
       socket <- Stream.resource(udpSocket(port, options))
       packet <- input
