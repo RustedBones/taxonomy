@@ -41,7 +41,7 @@ trait DnsCodec {
   val dnsOpCode: Codec[DnsOpCode]             = uint4.xmap(DnsOpCode.withValue, _.value)
   val dnsResponseCode: Codec[DnsResponseCode] = uint4.xmap(DnsResponseCode.withValue, _.value)
   val dnsRecordType: Codec[DnsRecordType]     = uint16.xmap(DnsRecordType.withValue, _.value)
-  val dnsRecordClass: Codec[DnsRecordClass]   = uint16.xmap(DnsRecordClass.withValue, _.value)
+  val dnsRecordClass: Codec[DnsRecordClass]   = uint(15).xmap(DnsRecordClass.withValue, _.value)
 
   val dnsHeaderCodec: Codec[DnsHeader] = fixedSizeBytes(
     12,
@@ -100,6 +100,7 @@ trait DnsCodec {
   def dnsQuestionSection(implicit dnsBits: DnsBits): Codec[DnsQuestion] =
     (("qname" | domainName) ::
       ("qtype" | dnsRecordType) ::
+      ("unicast-response" | bool) ::
       ("qclass" | dnsRecordClass)).as[DnsQuestion]
 
   val ttl: Codec[FiniteDuration] = uint32.xmap(_.seconds, _.toSeconds)
@@ -168,8 +169,12 @@ trait DnsCodec {
     (("name" | domainName) :: ("type" | dnsRecordType))
       .consume[DnsResourceRecord] {
         case name :: recordType :: HNil =>
-          (provide(name) :: ("class" | dnsRecordClass) :: ("ttl" | ttl) :: ("rdata" | rdata(recordType)))
-            .as[DnsResourceRecord]
+          (provide(name) ::
+            ("cache-flush" | bool) ::
+            ("class" | dnsRecordClass) ::
+            ("ttl" | ttl) ::
+            ("rdata" | rdata(recordType))
+          ).as[DnsResourceRecord]
       } { rr =>
         rr.name :: rr.data.`type` :: HNil
       }

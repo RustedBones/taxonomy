@@ -20,6 +20,7 @@ import enumeratum.ValueEnumMacros
 import enumeratum.values.{IntEnum, IntEnumEntry}
 
 import scala.collection.immutable
+import scala.language.experimental.macros
 
 final case class DnsHeader(
     id: Int,

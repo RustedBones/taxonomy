@@ -23,9 +23,11 @@ import enumeratum.values.{IntEnum, IntEnumEntry}
 
 import scala.collection.immutable
 import scala.concurrent.duration.FiniteDuration
+import scala.language.experimental.macros
 
 final case class DnsResourceRecord(
     name: String,
+    cacheFlush: Boolean,
     `class`: DnsRecordClass,
     ttl: FiniteDuration,
     data: DnsRecordData

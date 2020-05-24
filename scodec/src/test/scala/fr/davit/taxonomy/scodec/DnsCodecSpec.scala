@@ -119,7 +119,7 @@ class DnsCodecSpec extends AnyFlatSpec with Matchers {
     val ttl         = 3.hours
     val ipv4        = InetAddress.getByAddress(Array[Byte](1, 2, 3, 4)).asInstanceOf[Inet4Address]
     val aRecordData = DnsARecordData(ipv4)
-    val aRecord     = DnsResourceRecord(name, DnsRecordClass.Internet, ttl, aRecordData)
+    val aRecord     = DnsResourceRecord(name, cacheFlush = false, DnsRecordClass.Internet, ttl, aRecordData)
 
     val data = (
       ByteVector(name.length.toByte) ++ ByteVector(name.getBytes(DnsCodec.ascii)) ++ ByteVector.fromByte(0) ++ // name
@@ -152,6 +152,7 @@ class DnsCodecSpec extends AnyFlatSpec with Matchers {
     val question = DnsQuestion(
       name = "davit.fr",
       `type` = DnsRecordType.A,
+      unicastResponse = false,
       `class` = DnsRecordClass.Internet
     )
 
@@ -168,6 +169,7 @@ class DnsCodecSpec extends AnyFlatSpec with Matchers {
 
     val answer = DnsResourceRecord(
       name = "davit.fr",
+      cacheFlush = false,
       `class` = DnsRecordClass.Internet,
       3.hours,
       DnsARecordData(InetAddress.getByName("217.70.184.38").asInstanceOf[Inet4Address])

@@ -34,7 +34,7 @@ class DnsClientItSpec extends AnyFlatSpec with Matchers {
   implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 
   "Dns" should "lookup DNS queries" in {
-    val question = DnsQuestion("davit.fr", DnsRecordType.A, DnsRecordClass.Internet)
+    val question = DnsQuestion("davit.fr", DnsRecordType.A, unicastResponse = false, DnsRecordClass.Internet)
     val query    = DnsMessage.query(id = 1, questions = Seq(question))
     val response = Dns
       .resolve[IO](DnsPacket(quad9DnsServer, query))
@@ -44,7 +44,7 @@ class DnsClientItSpec extends AnyFlatSpec with Matchers {
     response shouldBe DnsMessage(
       query.header.copy(`type` = DnsType.Response, isRecursionAvailable = true, countAnswerRecords = 1),
       query.questions,
-      Seq(DnsResourceRecord("davit.fr", DnsRecordClass.Internet, 3.hours, DnsARecordData(ip))), // TODO fix label ptr
+      Seq(DnsResourceRecord("davit.fr", cacheFlush = false, DnsRecordClass.Internet, 3.hours, DnsARecordData(ip))), // TODO fix label ptr
       Seq.empty,
       Seq.empty
     )
