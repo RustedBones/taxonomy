@@ -21,6 +21,7 @@ import java.net.{Inet4Address, InetAddress, InetSocketAddress}
 import cats.effect._
 import fr.davit.taxonomy.model.record.{DnsARecordData, DnsRecordClass, DnsRecordType, DnsResourceRecord}
 import fr.davit.taxonomy.model.{DnsMessage, DnsQuestion, DnsType}
+import fs2.io.udp.SocketGroup
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -36,15 +37,19 @@ class DnsClientItSpec extends AnyFlatSpec with Matchers {
   "Dns" should "lookup DNS queries" in {
     val question = DnsQuestion("davit.fr", DnsRecordType.A, unicastResponse = false, DnsRecordClass.Internet)
     val query    = DnsMessage.query(id = 1, questions = Seq(question))
-    val response = Dns
-      .resolve[IO](DnsPacket(quad9DnsServer, query))
-      .unsafeRunSync()
+    val socketResource = for {
+      blocker     <- Blocker[IO]
+      socketGroup <- SocketGroup[IO](blocker)
+      socket <- socketGroup.open[IO]()
+    } yield socket
+
+   val response = socketResource.use(s => Dns.resolve(s, DnsPacket(quad9DnsServer, query))).unsafeRunSync()
 
     val ip = InetAddress.getByName("217.70.184.38").asInstanceOf[Inet4Address]
     response shouldBe DnsMessage(
       query.header.copy(`type` = DnsType.Response, isRecursionAvailable = true, countAnswerRecords = 1),
       query.questions,
-      Seq(DnsResourceRecord("davit.fr", cacheFlush = false, DnsRecordClass.Internet, 3.hours, DnsARecordData(ip))), // TODO fix label ptr
+      Seq(DnsResourceRecord("davit.fr", cacheFlush = false, DnsRecordClass.Internet, 3.hours, DnsARecordData(ip))),
       Seq.empty,
       Seq.empty
     )
