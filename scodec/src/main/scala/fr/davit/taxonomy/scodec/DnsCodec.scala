@@ -152,6 +152,7 @@ trait DnsCodec {
       .typecase(DnsRecordType.PTR, dnsPTRRecordData)
       .typecase(DnsRecordType.SOA, dnsSOARecordData)
       .typecase(DnsRecordType.SRV, dnsSRVRecordData)
+      .typecase(DnsRecordType.TXT, dnsTXTRecordData)
 
   def rdata(recordType: DnsRecordType)(implicit dnsBits: DnsBits): Codec[DnsRecordData] =
     variableSizeBytes(
@@ -173,8 +174,7 @@ trait DnsCodec {
             ("cache-flush" | bool) ::
             ("class" | dnsRecordClass) ::
             ("ttl" | ttl) ::
-            ("rdata" | rdata(recordType))
-          ).as[DnsResourceRecord]
+            ("rdata" | rdata(recordType))).as[DnsResourceRecord]
       } { rr =>
         rr.name :: rr.data.`type` :: HNil
       }
