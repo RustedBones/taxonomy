@@ -60,7 +60,7 @@ trait DnsCodec {
       ("arcount" | uint16)).as[DnsHeader]
   )
 
-  val label: Codec[String] = constant(bin"00") ~> variableSizeBytes(int(6), string(ascii))
+  val label: Codec[String] = constant(bin"00") ~> variableSizeBytes(uint(6), string(ascii))
   val pointer: Codec[Int]  = constant(bin"11") ~> uint(14)
 
   def labels(implicit dnsBits: DnsBits, ptrs: Set[Int] = Set.empty): Codec[List[String]] = Codec(
