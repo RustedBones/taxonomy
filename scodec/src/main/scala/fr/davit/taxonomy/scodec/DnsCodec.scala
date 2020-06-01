@@ -76,7 +76,7 @@ trait DnsCodec {
             case Attempt.Successful(DecodeResult(Left(p), r)) =>
               // pointer
               if (ptrs.contains(p)) {
-                Attempt.failure(Err("Domain name pointer cycle detected"))
+                Attempt.failure(Err("Name contains a pointer that loops"))
               } else {
                 labels(dnsBits, ptrs + p)
                   .decode(dnsBits.bits.drop(p * 8))
