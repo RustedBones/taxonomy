@@ -21,9 +21,9 @@ import java.net.InetSocketAddress
 import cats.effect._
 import cats.implicits._
 import fr.davit.taxonomy.model.DnsMessage
-import fr.davit.taxonomy.scodec.DnsCodec
 import fs2._
 import fs2.io.udp.{Packet, Socket}
+import scodec.Codec
 import scodec.stream.{StreamDecoder, StreamEncoder}
 
 final case class DnsPacket(address: InetSocketAddress, query: DnsMessage)
@@ -33,30 +33,35 @@ object Dns {
   def resolve[F[_]: Concurrent: ContextShift](
       socket: Socket[F],
       packet: DnsPacket
-  ): F[DnsMessage] = for {
-      data <- Sync[F].delay(DnsCodec.dnsMesage.encode(packet.query).require)
+  )(implicit codec: Codec[DnsMessage]): F[DnsMessage] =
+    for {
+      data <- Sync[F].delay(codec.encode(packet.query).require)
       datagram = Packet(packet.address, Chunk.byteVector(data.toByteVector))
       _       <- socket.write(datagram)
       p       <- socket.read()
-      message <- Sync[F].delay(DnsCodec.dnsMesage.decode(p.bytes.toByteVector.toBitVector).require.value)
+      message <- Sync[F].delay(codec.decode(p.bytes.toByteVector.toBitVector).require.value)
     } yield message
 
-  def stream[F[_]: Concurrent: ContextShift](socket: Socket[F]): Pipe[F, DnsPacket, Unit] = { input =>
+  def stream[F[_]: Concurrent: ContextShift](
+      socket: Socket[F]
+  )(implicit codec: Codec[DnsMessage]): Pipe[F, DnsPacket, Unit] = { input =>
     for {
       packet <- input
       _ <- Stream(packet.query)
-        .through(StreamEncoder.once(DnsCodec.dnsMesage).toPipeByte[F])
+        .through(StreamEncoder.once(codec).toPipeByte[F])
         .chunks
         .map(data => Packet(packet.address, data))
         .through(socket.writes())
     } yield ()
   }
 
-  def listen[F[_]: Concurrent: ContextShift](socket: Socket[F]): Stream[F, DnsMessage] =
+  def listen[F[_]: Concurrent: ContextShift](
+      socket: Socket[F]
+  )(implicit codec: Codec[DnsMessage]): Stream[F, DnsMessage] =
     for {
       datagram <- socket.reads()
       message <- Stream
         .chunk(datagram.bytes)
-        .through(StreamDecoder.once(DnsCodec.dnsMesage).toPipeByte[F])
+        .through(StreamDecoder.once(codec).toPipeByte[F])
     } yield message
 }
