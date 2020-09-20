@@ -2,15 +2,32 @@
 val username = "RustedBones"
 val repo     = "taxonomy"
 
+lazy val filterScalacOptions = { options: Seq[String] =>
+  options.filterNot { o =>
+    // get rid of value discard
+    o == "-Ywarn-value-discard" || o == "-Wvalue-discard"
+  }
+}
+
+// for sbt-github-actions
+ThisBuild / crossScalaVersions := Seq("2.13.3", "2.12.12")
+ThisBuild / githubWorkflowBuild := Seq(
+  WorkflowStep.Sbt(name = Some("Check project"), commands = List("scalafmtCheckAll", "headerCheckAll")),
+  WorkflowStep.Sbt( name = Some("Build project"), commands = List("test", "it:test"))
+)
+ThisBuild / githubWorkflowTargetBranches := Seq("master")
+ThisBuild / githubWorkflowPublishTargetBranches := Seq.empty
+
+
 lazy val commonSettings = Defaults.itSettings ++
   headerSettings(Configurations.IntegrationTest) ++
   Seq(
     organization := "fr.davit",
     organizationName := "Michel Davit",
     version := "0.1.0-SNAPSHOT",
-    crossScalaVersions := Seq("2.13.1", "2.12.10"),
+    crossScalaVersions := (ThisBuild / crossScalaVersions).value,
     scalaVersion := crossScalaVersions.value.head,
-    Compile / compile / scalacOptions ++= Settings.scalacOptions,
+    scalacOptions ~= filterScalacOptions,
     homepage := Some(url(s"https://github.com/$username/$repo")),
     licenses += ("Apache-2.0", new URL("https://www.apache.org/licenses/LICENSE-2.0.txt")),
     startYear := Some(2020),

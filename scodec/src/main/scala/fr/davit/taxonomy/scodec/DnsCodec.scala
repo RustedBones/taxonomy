@@ -79,7 +79,7 @@ trait DnsCodec {
                 Attempt.failure(Err("Name contains a pointer that loops"))
               } else {
                 labels(dnsBits, ptrs + p)
-                  .decode(dnsBits.bits.drop(p * 8))
+                  .decode(dnsBits.bits.drop(p * 8L))
                   .map(result => DecodeResult(buf.reverse ++ result.value, r))
               }
             case Attempt.Successful(DecodeResult(Right(""), r)) =>

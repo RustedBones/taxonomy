@@ -25,10 +25,14 @@ import fs2._
 import fs2.io.udp.{Packet, Socket}
 import scodec.Codec
 import scodec.stream.{StreamDecoder, StreamEncoder}
+import sun.net.dns.ResolverConfiguration
 
 final case class DnsPacket(address: InetSocketAddress, query: DnsMessage)
 
 object Dns {
+
+  def resolverConfiguration[F[_]: Sync]: Resource[F, ResolverConfiguration] =
+    Resource.make(Sync[F].delay(ResolverConfiguration.open()))(_ => Sync[F].unit)
 
   def resolve[F[_]: Concurrent: ContextShift](
       socket: Socket[F],

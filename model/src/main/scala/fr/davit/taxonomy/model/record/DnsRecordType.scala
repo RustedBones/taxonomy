@@ -20,7 +20,6 @@ import enumeratum.ValueEnumMacros
 import enumeratum.values.{IntEnum, IntEnumEntry}
 
 import scala.collection.immutable
-import scala.language.experimental.macros
 
 sealed trait DnsRecordType extends IntEnumEntry
 

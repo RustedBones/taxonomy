@@ -110,7 +110,7 @@ class DnsCodecSpec extends AnyFlatSpec with Matchers {
     ).toBitVector
     val dnsBit: DnsBits = DnsBits(data)
     DnsCodec.domainName(dnsBit).complete.decode(data) shouldBe Attempt.failure(
-      Err("Domain name pointer cycle detected")
+      Err("Name contains a pointer that loops")
     )
   }
 
