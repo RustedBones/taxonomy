@@ -52,9 +52,9 @@ class DnsClientItSpec extends AnyFlatSpec with Matchers {
     response shouldBe DnsMessage(
       query.header.copy(`type` = DnsType.Response, isRecursionAvailable = true, countAnswerRecords = 1),
       query.questions,
-      Seq(DnsResourceRecord("davit.fr", cacheFlush = false, DnsRecordClass.Internet, 3.hours, DnsARecordData(ip))),
-      Seq.empty,
-      Seq.empty
+      List(DnsResourceRecord("davit.fr", cacheFlush = false, DnsRecordClass.Internet, 3.hours, DnsARecordData(ip))),
+      List.empty,
+      List.empty
     )
   }
 }
