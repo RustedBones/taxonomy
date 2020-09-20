@@ -26,6 +26,7 @@ import scala.concurrent.duration.FiniteDuration
 
 final case class DnsResourceRecord(
     name: String,
+    cacheFlush: Boolean,
     `class`: DnsRecordClass,
     ttl: FiniteDuration,
     data: DnsRecordData

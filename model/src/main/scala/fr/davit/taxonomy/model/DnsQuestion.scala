@@ -21,5 +21,6 @@ import fr.davit.taxonomy.model.record.{DnsRecordClass, DnsRecordType}
 final case class DnsQuestion(
     name: String,
     `type`: DnsRecordType,
+    unicastResponse: Boolean,
     `class`: DnsRecordClass
 )
