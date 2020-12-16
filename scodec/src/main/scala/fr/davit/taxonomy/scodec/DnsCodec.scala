@@ -16,34 +16,33 @@
 
 package fr.davit.taxonomy.scodec
 
-import java.net.{Inet4Address, Inet6Address, InetAddress}
-import java.nio.charset.Charset
-
-import fr.davit.taxonomy.model.record._
 import _root_.scodec.bits._
 import _root_.scodec.codecs._
 import _root_.scodec.{Attempt, Codec, DecodeResult, Decoder, Err, SizeBound}
-import fr.davit.taxonomy.model.{DnsHeader, DnsMessage, DnsOpCode, DnsQuestion, DnsResponseCode, DnsType}
-import fr.davit.taxonomy.scodec.DnsCodec.DnsBits
+import fr.davit.taxonomy.model.record._
+import fr.davit.taxonomy.model._
+import scodec.Attempt.{Failure, Successful}
 import shapeless._
 
-import scala.annotation.tailrec
+import java.net.{Inet4Address, Inet6Address, InetAddress}
+import java.nio.charset.Charset
+import scala.collection.mutable
 import scala.concurrent.duration._
 
 trait DnsCodec {
 
-  val ascii: Charset = Charset.forName("US-ASCII")
+  lazy val ascii: Charset = Charset.forName("US-ASCII")
 
   def size16(size: Int): Codec[Unit] = constant(BitVector.fromInt(size, 16))
 
-  val characterString: Codec[String]          = variableSizeBytes(uint8, string(ascii))
-  val dnsType: Codec[DnsType]                 = uint(1).xmap(DnsType.withValue, _.value)
-  val dnsOpCode: Codec[DnsOpCode]             = uint4.xmap(DnsOpCode.withValue, _.value)
-  val dnsResponseCode: Codec[DnsResponseCode] = uint4.xmap(DnsResponseCode.withValue, _.value)
-  val dnsRecordType: Codec[DnsRecordType]     = uint16.xmap(DnsRecordType.withValue, _.value)
-  val dnsRecordClass: Codec[DnsRecordClass]   = uint(15).xmap(DnsRecordClass.withValue, _.value)
+  lazy val characterString: Codec[String]          = variableSizeBytes(uint8, string(ascii))
+  lazy val dnsType: Codec[DnsType]                 = uint(1).xmap(DnsType.withValue, _.value)
+  lazy val dnsOpCode: Codec[DnsOpCode]             = uint4.xmap(DnsOpCode.withValue, _.value)
+  lazy val dnsResponseCode: Codec[DnsResponseCode] = uint4.xmap(DnsResponseCode.withValue, _.value)
+  lazy val dnsRecordType: Codec[DnsRecordType]     = uint16.xmap(DnsRecordType.withValue, _.value)
+  lazy val dnsRecordClass: Codec[DnsRecordClass]   = uint(15).xmap(DnsRecordClass.withValue, _.value)
 
-  val dnsHeaderCodec: Codec[DnsHeader] = fixedSizeBytes(
+  lazy val dnsHeaderCodec: Codec[DnsHeader] = fixedSizeBytes(
     12,
     (("id" | uint16) ::
       ("qr" | dnsType) ::
@@ -60,86 +59,55 @@ trait DnsCodec {
       ("arcount" | uint16)).as[DnsHeader]
   )
 
-  val label: Codec[String] = constant(bin"00") ~> variableSizeBytes(uint(6), string(ascii))
-  val pointer: Codec[Int]  = constant(bin"11") ~> uint(14)
+  lazy val label: Codec[String]        = constant(bin"00") ~> variableSizeBytes(uint(6), string(ascii))
+  lazy val pointer: Codec[Int]         = constant(bin"11") ~> uint(14)
+  lazy val labels: Codec[List[String]] = variableSizeDelimited(constant(BitVector.lowByte), list(label), 1)
+  lazy val domainName: Codec[String]   = labels.xmap(_.mkString("."), _.split('.').toList)
 
-  def labels(implicit dnsBits: DnsBits, ptrs: Set[Int] = Set.empty): Codec[List[String]] = Codec(
-    list(label) <~ constant(BitVector.lowByte),
-    new Decoder[List[String]] {
-
-      override def decode(bits: BitVector): Attempt[DecodeResult[List[String]]] = {
-        @tailrec
-        def go(rem: BitVector, buf: List[String]): Attempt[DecodeResult[List[String]]] =
-          fallback(pointer, label).decode(rem) match {
-            case f: Attempt.Failure =>
-              f
-            case Attempt.Successful(DecodeResult(Left(p), r)) =>
-              // pointer
-              if (ptrs.contains(p)) {
-                Attempt.failure(Err("Name contains a pointer that loops"))
-              } else {
-                labels(dnsBits, ptrs + p)
-                  .decode(dnsBits.bits.drop(p * 8L))
-                  .map(result => DecodeResult(buf.reverse ++ result.value, r))
-              }
-            case Attempt.Successful(DecodeResult(Right(""), r)) =>
-              // stop
-              Attempt.successful(DecodeResult(buf.reverse, r))
-            case Attempt.Successful(DecodeResult(Right(l), r)) =>
-              // label
-              go(r, l :: buf)
-          }
-
-        go(bits, List.empty)
-      }
-    }
-  )
-
-  def domainName(implicit dnsBits: DnsBits): Codec[String] = labels.xmap(_.mkString("."), _.split('.').toList)
-
-  def dnsQuestionSection(implicit dnsBits: DnsBits): Codec[DnsQuestion] =
+  lazy val dnsQuestionSection: Codec[DnsQuestion] =
     (("qname" | domainName) ::
       ("qtype" | dnsRecordType) ::
       ("unicast-response" | bool) ::
       ("qclass" | dnsRecordClass)).as[DnsQuestion]
 
-  val ttl: Codec[FiniteDuration] = uint32.xmap(_.seconds, _.toSeconds)
+  lazy val ttl: Codec[FiniteDuration] = uint32.xmap(_.seconds, _.toSeconds)
 
-  val ipv4: Codec[Inet4Address] = bytesStrict(4)
-    .xmap[Inet4Address](
-      bytes => InetAddress.getByAddress(bytes.toArray).asInstanceOf[Inet4Address],
-      ip => ByteVector(ip.getAddress)
-    )
+  lazy val ipv4: Codec[Inet4Address] =
+    bytesStrict(4)
+      .xmap[Inet4Address](
+        bytes => InetAddress.getByAddress(bytes.toArray).asInstanceOf[Inet4Address],
+        ip => ByteVector(ip.getAddress)
+      )
 
-  val ipv6: Codec[Inet6Address] = bytesStrict(16).xmap(
+  lazy val ipv6: Codec[Inet6Address] = bytesStrict(16).xmap(
     bytes => InetAddress.getByAddress(bytes.toArray).asInstanceOf[Inet6Address],
     ip => ByteVector(ip.getAddress)
   )
 
-  val dnsARecordData: Codec[DnsARecordData]                                    = ipv4.as[DnsARecordData]
-  val dnsAAAARecordData: Codec[DnsAAAARecordData]                              = ipv6.as[DnsAAAARecordData]
-  def dnsCNAMERecordData(implicit dnsBits: DnsBits): Codec[DnsCNAMERecordData] = domainName.as[DnsCNAMERecordData]
-  val dnsHINFORecordData: Codec[DnsHINFORecordData]                            = (characterString :: characterString).as[DnsHINFORecordData]
-  def dnsMXRecordData(implicit dnsBits: DnsBits): Codec[DnsMXRecordData]       = (uint16 :: domainName).as[DnsMXRecordData]
+  lazy val dnsARecordData: Codec[DnsARecordData]         = ipv4.as[DnsARecordData]
+  lazy val dnsAAAARecordData: Codec[DnsAAAARecordData]   = ipv6.as[DnsAAAARecordData]
+  lazy val dnsCNAMERecordData: Codec[DnsCNAMERecordData] = domainName.as[DnsCNAMERecordData]
+  lazy val dnsHINFORecordData: Codec[DnsHINFORecordData] = (characterString :: characterString).as[DnsHINFORecordData]
+  lazy val dnsMXRecordData: Codec[DnsMXRecordData]       = (uint16 :: domainName).as[DnsMXRecordData]
 
-  def dnsNAPTRRecordData(implicit dnsBits: DnsBits): Codec[DnsNAPTRRecordData] =
+  lazy val dnsNAPTRRecordData: Codec[DnsNAPTRRecordData] =
     (uint16 :: uint16 :: characterString :: characterString :: characterString :: domainName).as[DnsNAPTRRecordData]
-  def dnsNSRecordData(implicit dnsBits: DnsBits): Codec[DnsNSRecordData]   = domainName.as[DnsNSRecordData]
-  def dnsPTRRecordData(implicit dnsBits: DnsBits): Codec[DnsPTRRecordData] = domainName.as[DnsPTRRecordData]
+  lazy val dnsNSRecordData: Codec[DnsNSRecordData]   = domainName.as[DnsNSRecordData]
+  lazy val dnsPTRRecordData: Codec[DnsPTRRecordData] = domainName.as[DnsPTRRecordData]
 
-  def dnsSOARecordData(implicit dnsBits: DnsBits): Codec[DnsSOARecordData] =
+  lazy val dnsSOARecordData: Codec[DnsSOARecordData] =
     (domainName :: domainName :: uint32 :: ttl :: ttl :: ttl :: ttl).as[DnsSOARecordData]
 
-  def dnsSRVRecordData(implicit dnsBits: DnsBits): Codec[DnsSRVRecordData] =
+  lazy val dnsSRVRecordData: Codec[DnsSRVRecordData] =
     (uint16 :: uint16 :: uint16 :: domainName).as[DnsSRVRecordData]
-  val dnsTXTRecordData: Codec[DnsTXTRecordData] = vector(characterString).xmap(DnsTXTRecordData, _.txt.toVector)
+  lazy val dnsTXTRecordData: Codec[DnsTXTRecordData] = vector(characterString).xmap(DnsTXTRecordData, _.txt.toVector)
 
   def dnsRawRecordData(recordType: DnsRecordType): Codec[DnsRawRecordData] =
     vector(byte).xmap(DnsRawRecordData(recordType, _), _.data.toVector)
 
   def dnsRecordData(
       recordType: DnsRecordType
-  )(implicit dnsBits: DnsBits): DiscriminatorCodec[DnsRecordData, DnsRecordType] =
+  ): DiscriminatorCodec[DnsRecordData, DnsRecordType] =
     discriminated[DnsRecordData]
       .by(provide(recordType))
       .typecase(DnsRecordType.A, dnsARecordData)
@@ -154,7 +122,7 @@ trait DnsCodec {
       .typecase(DnsRecordType.SRV, dnsSRVRecordData)
       .typecase(DnsRecordType.TXT, dnsTXTRecordData)
 
-  def rdata(recordType: DnsRecordType)(implicit dnsBits: DnsBits): Codec[DnsRecordData] =
+  def rdata(recordType: DnsRecordType): Codec[DnsRecordData] =
     variableSizeBytes(
       uint16,
       discriminatorFallback(dnsRawRecordData(recordType), dnsRecordData(recordType)).xmapc {
@@ -166,7 +134,7 @@ trait DnsCodec {
       }
     )
 
-  def dnsResourceRecord(implicit dnsBits: DnsBits): Codec[DnsResourceRecord] =
+  lazy val dnsResourceRecord: Codec[DnsResourceRecord] =
     (("name" | domainName) :: ("type" | dnsRecordType))
       .consume[DnsResourceRecord] {
         case name :: recordType :: HNil =>
@@ -179,27 +147,66 @@ trait DnsCodec {
         rr.name :: rr.data.`type` :: HNil
       }
 
-  val dnsMesage: Codec[DnsMessage] = new Codec[DnsMessage] {
+  def questionSection(count: Int): Codec[Vector[DnsQuestion]] =
+    "qdsection" | vectorOfN(provide(count), dnsQuestionSection)
 
-    private def questionSection(count: Int)(implicit dnsBits: DnsBits) =
-      "qdsection" | vectorOfN(provide(count), dnsQuestionSection)
-    private def answerSection(count: Int)(implicit dnsBits: DnsBits) =
-      "ansection" | vectorOfN(provide(count), dnsResourceRecord)
-    private def authoritySection(count: Int)(implicit dnsBits: DnsBits) =
-      "nssection" | vectorOfN(provide(count), dnsResourceRecord)
-    private def additionalSection(count: Int)(implicit dnsBits: DnsBits) =
-      "arsection" | vectorOfN(provide(count), dnsResourceRecord)
+  def answerSection(count: Int): Codec[Vector[DnsResourceRecord]] =
+    "ansection" | vectorOfN(provide(count), dnsResourceRecord)
+
+  def authoritySection(count: Int): Codec[Vector[DnsResourceRecord]] =
+    "nssection" | vectorOfN(provide(count), dnsResourceRecord)
+
+  def additionalSection(count: Int): Codec[Vector[DnsResourceRecord]] =
+    "arsection" | vectorOfN(provide(count), dnsResourceRecord)
+}
+
+class DnsMessageDecoder(bits: BitVector) extends DnsCodec {
+
+  private var stash: Option[BitVector] = None
+
+  private val seenPtrs: mutable.Set[Int] = mutable.Set.empty
+
+  override lazy val labels: Codec[List[String]] = Codec.lazily(
+    Codec(
+      variableSizeDelimited(constant(BitVector.lowByte), list(label), 1),
+      Decoder(
+        data =>
+          fallback(pointer, label)
+            .decode(data)
+            .flatMap { result =>
+              result.value match {
+                case Right("") =>
+                  Successful(DecodeResult(Nil, stash.getOrElse(result.remainder)))
+                case Right(label) =>
+                  labels.decode(result.remainder).map(_.map(domain => label :: domain))
+                case Left(ptr) if seenPtrs.contains(ptr) =>
+                  Failure(Err("Name contains a pointer that loops"))
+                case Left(ptr) =>
+                  if (stash.isEmpty) stash = Some(result.remainder)
+                  seenPtrs += ptr
+                  labels.decode(bits.drop(ptr * 8L))
+              }
+            }
+      )
+    )
+  )
+}
+
+object DnsCodec extends DnsCodec {
+
+  // format: off
+  val dnsMessage: Codec[DnsMessage] = new Codec[DnsMessage] {
 
     override def sizeBound: SizeBound = SizeBound.atMost(512 * 8)
 
     override def decode(bits: BitVector): Attempt[DecodeResult[DnsMessage]] = {
-      implicit val dnsBits: DnsBits = DnsBits(bits)
+      val decoder = new DnsMessageDecoder(bits)
       for {
-        header      <- dnsHeaderCodec.decode(bits)
-        questions   <- questionSection(header.value.countQuestions).decode(header.remainder)
-        answers     <- answerSection(header.value.countAnswerRecords).decode(questions.remainder)
-        authorities <- authoritySection(header.value.countAuthorityRecords).decode(answers.remainder)
-        additionals <- additionalSection(header.value.countAdditionalRecords).decode(authorities.remainder)
+        header      <- decoder.dnsHeaderCodec.decode(bits)
+        questions   <- decoder.questionSection(header.value.countQuestions).decode(header.remainder)
+        answers     <- decoder.answerSection(header.value.countAnswerRecords).decode(questions.remainder)
+        authorities <- decoder.authoritySection(header.value.countAuthorityRecords).decode(answers.remainder)
+        additionals <- decoder.additionalSection(header.value.countAdditionalRecords).decode(authorities.remainder)
       } yield DecodeResult(
         DnsMessage(header.value, questions.value, answers.value, authorities.value, additionals.value),
         additionals.remainder
@@ -207,7 +214,6 @@ trait DnsCodec {
     }
 
     override def encode(message: DnsMessage): Attempt[BitVector] = {
-      implicit val dnsBits: DnsBits = DnsBits(BitVector.empty) // not used for encoding
       for {
         header      <- dnsHeaderCodec.encode(message.header)
         questions   <- questionSection(message.header.countQuestions).encode(message.questions.toVector)
@@ -217,9 +223,6 @@ trait DnsCodec {
       } yield header ++ questions ++ answers ++ authorities ++ additionals
     }
   }
-}
+  // format: on
 
-object DnsCodec extends DnsCodec {
-
-  final case class DnsBits(bits: BitVector)
 }
