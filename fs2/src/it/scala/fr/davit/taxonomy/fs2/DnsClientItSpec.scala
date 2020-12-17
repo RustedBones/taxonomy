@@ -35,7 +35,7 @@ class DnsClientItSpec extends AnyFlatSpec with Matchers {
   val quad9DnsServer = new InetSocketAddress("9.9.9.9", 53)
 
   implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-  implicit val codec: Codec[DnsMessage]       = DnsCodec.dnsMesage
+  implicit val codec: Codec[DnsMessage]       = DnsCodec.dnsMessage
 
   "Dns" should "lookup DNS queries" in {
     val question = DnsQuestion("davit.fr", DnsRecordType.A, unicastResponse = false, DnsRecordClass.Internet)
