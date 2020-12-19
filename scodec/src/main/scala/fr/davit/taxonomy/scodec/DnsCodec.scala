@@ -176,7 +176,10 @@ class DnsMessageDecoder(bits: BitVector) extends DnsCodec {
             .flatMap { result =>
               result.value match {
                 case Right("") =>
-                  Successful(DecodeResult(Nil, stash.getOrElse(result.remainder)))
+                  val remainder = stash.getOrElse(result.remainder)
+                  stash = None
+                  seenPtrs.clear()
+                  Successful(DecodeResult(Nil, remainder))
                 case Right(label) =>
                   labels.decode(result.remainder).map(_.map(domain => label :: domain))
                 case Left(ptr) if seenPtrs.contains(ptr) =>
