@@ -86,19 +86,24 @@ class DnsCodecSpec extends AnyFlatSpec with Matchers {
     DnsCodec.domainName.complete.decode(data).require.value shouldBe name
   }
 
-  it should "decode domain pointer" in {
-    val name = "www.example.com"
+  it should "decode domain pointers" in {
+    val webDomain = "www.example.com"
+    val appDomain = "app.example.com"
+    val prt       = 6.toByte
 
     val data = (
-      ByteVector.fill(6)(0) ++ // fake header
+      ByteVector.fill(prt.toLong)(0) ++ // fake header
         ByteVector.fromByte(7) ++ ByteVector("example".getBytes(DnsCodec.ascii)) ++
         ByteVector.fromByte(3) ++ ByteVector("com".getBytes(DnsCodec.ascii)) ++
         ByteVector.fromByte(0) ++
         ByteVector.fromByte(3) ++ ByteVector("www".getBytes(DnsCodec.ascii)) ++
-        ByteVector.fromByte(192.toByte) ++ ByteVector.fromByte(6)
+        ByteVector.fromByte(192.toByte) ++ ByteVector.fromByte(prt) ++
+        ByteVector.fromByte(3) ++ ByteVector("app".getBytes(DnsCodec.ascii)) ++
+        ByteVector.fromByte(192.toByte) ++ ByteVector.fromByte(prt)
     ).toBitVector
     val messageDecoder = new DnsMessageDecoder(data)
-    messageDecoder.domainName.decode(data.drop((6 + 8 + 4 + 1) * 8)).require.value shouldBe name
+    messageDecoder.domainName.decode(data.drop((6 + 8 + 4 + 1) * 8)).require.value shouldBe webDomain
+    messageDecoder.domainName.decode(data.drop((6 + 8 + 4 + 1 + 4 + 2) * 8)).require.value shouldBe appDomain
   }
 
   it should "detect name pointer cycle" in {
