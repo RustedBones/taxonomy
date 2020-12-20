@@ -17,10 +17,9 @@
 package fr.davit.taxonomy.fs2
 
 import java.net.{Inet4Address, InetAddress, InetSocketAddress}
-
 import cats.effect._
 import fr.davit.taxonomy.model.record.{DnsARecordData, DnsRecordClass, DnsRecordType, DnsResourceRecord}
-import fr.davit.taxonomy.model.{DnsMessage, DnsQuestion, DnsType}
+import fr.davit.taxonomy.model.{DnsMessage, DnsPacket, DnsQuestion, DnsType}
 import fr.davit.taxonomy.scodec.DnsCodec
 import fs2.io.udp.SocketGroup
 import org.scalatest.flatspec.AnyFlatSpec
@@ -49,12 +48,13 @@ class DnsClientItSpec extends AnyFlatSpec with Matchers {
     val response = socketResource.use(s => Dns.resolve(s, DnsPacket(quad9DnsServer, query))).unsafeRunSync()
 
     val ip = InetAddress.getByName("217.70.184.38").asInstanceOf[Inet4Address]
-    response shouldBe DnsMessage(
+    val message = DnsMessage(
       query.header.copy(`type` = DnsType.Response, isRecursionAvailable = true, countAnswerRecords = 1),
       query.questions,
       List(DnsResourceRecord("davit.fr", cacheFlush = false, DnsRecordClass.Internet, 3.hours, DnsARecordData(ip))),
       List.empty,
       List.empty
     )
+    response shouldBe DnsPacket(quad9DnsServer, message)
   }
 }
