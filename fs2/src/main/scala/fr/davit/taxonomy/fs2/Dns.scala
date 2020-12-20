@@ -16,18 +16,14 @@
 
 package fr.davit.taxonomy.fs2
 
-import java.net.InetSocketAddress
-
 import cats.effect._
 import cats.implicits._
-import fr.davit.taxonomy.model.DnsMessage
+import fr.davit.taxonomy.model.{DnsMessage, DnsPacket}
 import fs2._
 import fs2.io.udp.{Packet, Socket}
 import scodec.Codec
 import scodec.stream.{StreamDecoder, StreamEncoder}
 import sun.net.dns.ResolverConfiguration
-
-final case class DnsPacket(address: InetSocketAddress, query: DnsMessage)
 
 object Dns {
 
@@ -37,21 +33,20 @@ object Dns {
   def resolve[F[_]: Concurrent: ContextShift](
       socket: Socket[F],
       packet: DnsPacket
-  )(implicit codec: Codec[DnsMessage]): F[DnsMessage] =
+  )(implicit codec: Codec[DnsMessage]): F[DnsPacket] =
     for {
-      data <- Sync[F].delay(codec.encode(packet.query).require)
-      datagram = Packet(packet.address, Chunk.byteVector(data.toByteVector))
-      _       <- socket.write(datagram)
-      p       <- socket.read()
-      message <- Sync[F].delay(codec.decode(p.bytes.toByteVector.toBitVector).require.value)
-    } yield message
+      data     <- Sync[F].delay(codec.encode(packet.message).require)
+      _        <- socket.write(Packet(packet.address, Chunk.byteVector(data.toByteVector)))
+      response <- socket.read()
+      message  <- Sync[F].delay(codec.decode(response.bytes.toByteVector.toBitVector).require.value)
+    } yield DnsPacket(response.remote, message)
 
   def stream[F[_]: Concurrent: ContextShift](
       socket: Socket[F]
   )(implicit codec: Codec[DnsMessage]): Pipe[F, DnsPacket, Unit] = { input =>
     for {
       packet <- input
-      _ <- Stream(packet.query)
+      _ <- Stream(packet.message)
         .through(StreamEncoder.once(codec).toPipeByte[F])
         .chunks
         .map(data => Packet(packet.address, data))
@@ -61,11 +56,11 @@ object Dns {
 
   def listen[F[_]: Concurrent: ContextShift](
       socket: Socket[F]
-  )(implicit codec: Codec[DnsMessage]): Stream[F, DnsMessage] =
+  )(implicit codec: Codec[DnsMessage]): Stream[F, DnsPacket] =
     for {
       datagram <- socket.reads()
       message <- Stream
         .chunk(datagram.bytes)
         .through(StreamDecoder.once(codec).toPipeByte[F])
-    } yield message
+    } yield DnsPacket(datagram.remote, message)
 }
