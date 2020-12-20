@@ -55,4 +55,4 @@ jobs:
         run: sbt ++${{ matrix.scala }} scalafmtCheckAll headerCheckAll
 
       - name: Build project
-        run: 'sbt ++${{ matrix.scala }} test it:test'
+        run: sbt ++${{ matrix.scala }} test

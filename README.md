@@ -12,6 +12,7 @@ and [fs2](https://github.com/typelevel/fs2)
 
 | Version | Release date | cats version | Scala versions      |
 | ------- | ------------ | -----------  | ------------------- |
+| `0.2.0` | 2020-12-20   | `2.2.0`      | `2.13.4`, `2.12.12` |
 | `0.1.0` | 2020-12-17   | `2.2.0`      | `2.13.4`, `2.12.12` |
 
 
@@ -32,7 +33,7 @@ libraryDependencies += "fr.davit" %% "taxonomy-model"  % "<version>"
 libraryDependencies += "fr.davit" %% "taxonomy-scodec" % "<version>"
 ```
 
-## DNS
+## Dns
 
 Here is a quick example of a DNS lookup to the `9.9.9.9` DNS server for the `davit.fr` domain name
 
@@ -64,3 +65,8 @@ val socketResource = for {
 
 val response = socketResource.use(s => Dns.resolve(s, DnsPacket(quad9DnsServer, query))).unsafeRunSync()
 ```
+
+## Based on taxonomy
+
+- [`scout`](https://github.com/RustedBones/scout): zeroconf DNS-SD client and server
+- [`shovel`](https://github.com/RustedBones/shovel): A JVM dig implementation
