@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.3.0 (2021-01-09)
+
 - Update dependencies
 - Remove sizes from header model
 
