@@ -44,11 +44,7 @@ object DnsMessage {
       isTruncated = false,
       isRecursionDesired = isRecursionDesired,
       isRecursionAvailable = false,
-      responseCode = DnsResponseCode.Success,
-      countQuestions = questions.size,
-      countAnswerRecords = 0,
-      countAuthorityRecords = 0,
-      countAdditionalRecords = 0
+      responseCode = DnsResponseCode.Success
     )
 
     DnsMessage(

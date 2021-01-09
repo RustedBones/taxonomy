@@ -29,11 +29,7 @@ final case class DnsHeader(
     isTruncated: Boolean,
     isRecursionDesired: Boolean,
     isRecursionAvailable: Boolean,
-    responseCode: DnsResponseCode,
-    countQuestions: Int,
-    countAnswerRecords: Int,
-    countAuthorityRecords: Int,
-    countAdditionalRecords: Int
+    responseCode: DnsResponseCode
 )
 
 sealed abstract class DnsType(val value: Int) extends IntEnumEntry
