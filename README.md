@@ -1,7 +1,7 @@
 # taxonomy
 
 [![Continuous Integration](https://github.com/RustedBones/taxonomy/workflows/Continuous%20Integration/badge.svg?branch=master)](https://github.com/RustedBones/taxonomy/actions?query=branch%3Amaster+workflow%3A"Continuous+Integration")
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/fr.davit/taxonomy_2.13/badge.svg)](https://maven-badges.herokuapp.com/maven-central/fr.davit/taxonomy_2.13)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/fr.davit/taxonomy-model_2.13/badge.svg)](https://maven-badges.herokuapp.com/maven-central/fr.davit/taxonomy-model_2.13)
 [![Software License](https://img.shields.io/badge/license-Apache%202-brightgreen.svg?style=flat)](LICENSE)
 
 Strongly typed DNS for scala based on the [cats ecosystem](https://github.com/typelevel/cats)
@@ -12,6 +12,7 @@ and [fs2](https://github.com/typelevel/fs2)
 
 | Version | Release date | cats version | Scala versions      |
 | ------- | ------------ | -----------  | ------------------- |
+| `0.3.0` | 2021-01-09   | `2.2.0`      | `2.13.4`, `2.12.12` |
 | `0.2.0` | 2020-12-20   | `2.2.0`      | `2.13.4`, `2.12.12` |
 | `0.1.0` | 2020-12-17   | `2.2.0`      | `2.13.4`, `2.12.12` |
 
