@@ -17,18 +17,16 @@
 package fr.davit.taxonomy.scodec
 
 import java.net.{Inet4Address, InetAddress}
-
 import fr.davit.taxonomy.model.record.{DnsARecordData, DnsRecordClass, DnsRecordType, DnsResourceRecord}
 import fr.davit.taxonomy.model._
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+import munit.FunSuite
 import scodec.bits._
 import scodec.{Attempt, Err}
 
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
-class DnsCodecSpec extends AnyFlatSpec with Matchers {
+class DnsCodecSpec extends FunSuite {
 
   def resourceBin(path: String): BitVector = {
     val responseInputStream = getClass.getResourceAsStream(path)
@@ -41,7 +39,7 @@ class DnsCodecSpec extends AnyFlatSpec with Matchers {
     }
   }
 
-  "DnsCodec" should "encode / decode dns header" in {
+  test("encode / decode dns header") {
     val header = DnsHeader(
       id = 123,
       `type` = DnsType.Query,
@@ -60,11 +58,11 @@ class DnsCodecSpec extends AnyFlatSpec with Matchers {
         bin"0000101010001111"    // |QR|   Opcode  |AA|TC|RD|RA|   Z    |   RCODE   |
     // format: on
 
-    DnsCodec.dnsHeader.encode(header).require shouldBe data
-    DnsCodec.dnsHeader.complete.decode(data).require.value shouldBe header
+    assertEquals(DnsCodec.dnsHeader.encode(header).require, data)
+    assertEquals(DnsCodec.dnsHeader.complete.decode(data).require.value, header)
   }
 
-  it should "encode / decode domain name" in {
+  test("encode / decode domain name") {
     val name = "www.example.com"
 
     val data = (
@@ -74,11 +72,11 @@ class DnsCodecSpec extends AnyFlatSpec with Matchers {
         ByteVector.fromByte(0) // nul
     ).toBitVector
 
-    DnsCodec.domainName.encode(name).require shouldBe data
-    DnsCodec.domainName.complete.decode(data).require.value shouldBe name
+    assertEquals(DnsCodec.domainName.encode(name).require, data)
+    assertEquals(DnsCodec.domainName.complete.decode(data).require.value, name)
   }
 
-  it should "decode domain pointers" in {
+  test("decode domain pointers") {
     val webDomain = "www.example.com"
     val appDomain = "app.example.com"
     val prt       = 6.toByte
@@ -94,22 +92,21 @@ class DnsCodecSpec extends AnyFlatSpec with Matchers {
         ByteVector.fromByte(192.toByte) ++ ByteVector.fromByte(prt)
     ).toBitVector
     val messageDecoder = new DnsMessageDecoder(data)
-    messageDecoder.domainName.decode(data.drop((6 + 8 + 4 + 1) * 8)).require.value shouldBe webDomain
-    messageDecoder.domainName.decode(data.drop((6 + 8 + 4 + 1 + 4 + 2) * 8)).require.value shouldBe appDomain
+    assertEquals(messageDecoder.domainName.decode(data.drop((6 + 8 + 4 + 1) * 8)).require.value, webDomain)
+    assertEquals(messageDecoder.domainName.decode(data.drop((6 + 8 + 4 + 1 + 4 + 2) * 8)).require.value, appDomain)
   }
 
-  it should "detect name pointer cycle" in {
+  test("detect name pointer cycle") {
     val data = (
       ByteVector.fromByte(5) ++ ByteVector("cycle".getBytes(DnsCodec.ascii)) ++
         ByteVector.fromByte(192.toByte) ++ ByteVector.fromByte(0)
     ).toBitVector
     val messageDecoder = new DnsMessageDecoder(data)
-    messageDecoder.domainName.complete.decode(data) shouldBe Attempt.failure(
-      Err("Name contains a pointer that loops")
-    )
+    val failure        = Attempt.failure(Err("Name contains a pointer that loops"))
+    assertEquals(messageDecoder.domainName.complete.decode(data), failure)
   }
 
-  it should "encode / decode A record" in {
+  test("encode / decode A record") {
     val name        = "name"
     val ttl         = 3.hours
     val ipv4        = InetAddress.getByAddress(Array[Byte](1, 2, 3, 4)).asInstanceOf[Inet4Address]
@@ -123,11 +120,11 @@ class DnsCodecSpec extends AnyFlatSpec with Matchers {
         ByteVector.fromLong(ttl.toSeconds, 4) ++ // ttl
         ByteVector.fromInt(4, 2) ++ ByteVector(ipv4.getAddress) // rdlength + rdata
     ).toBitVector
-    DnsCodec.dnsResourceRecord.encode(aRecord).require shouldBe data
-    DnsCodec.dnsResourceRecord.complete.decode(data).require.value shouldBe aRecord
+    assertEquals(DnsCodec.dnsResourceRecord.encode(aRecord).require, data)
+    assertEquals(DnsCodec.dnsResourceRecord.complete.decode(data).require.value, aRecord)
   }
 
-  it should "encode / decode DNS messages" in {
+  test("encode / decode DNS messages") {
     val header = DnsHeader(
       id = 1,
       `type` = DnsType.Query,
@@ -153,8 +150,8 @@ class DnsCodecSpec extends AnyFlatSpec with Matchers {
       List.empty
     )
     val queryData = resourceBin("/query_davit_fr.bin")
-    DnsCodec.dnsMessage.encode(query).require shouldBe queryData
-    DnsCodec.dnsMessage.complete.decode(queryData).require.value shouldBe query
+    assertEquals(DnsCodec.dnsMessage.encode(query).require, queryData)
+    assertEquals(DnsCodec.dnsMessage.complete.decode(queryData).require.value, query)
 
     val answer = DnsResourceRecord(
       name = "davit.fr",
@@ -177,7 +174,7 @@ class DnsCodecSpec extends AnyFlatSpec with Matchers {
 
     val data = resourceBin("/response_davit_fr.bin")
     // DnsCodec.dnsMesage.encode(response).require shouldBe data
-    DnsCodec.dnsMessage.complete.decode(data).require.value shouldBe response
+    assertEquals(DnsCodec.dnsMessage.complete.decode(data).require.value, response)
   }
 
 }

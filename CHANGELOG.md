@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Update dependencies
 - Remove sizes from header model
 
 ## 0.2.0 (2020-12-20)

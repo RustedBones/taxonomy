@@ -46,7 +46,8 @@ lazy val commonSettings = Defaults.itSettings ++
     credentials ++= (for {
       username <- sys.env.get("SONATYPE_USERNAME")
       password <- sys.env.get("SONATYPE_PASSWORD")
-    } yield Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)).toSeq
+    } yield Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)).toSeq,
+    testFrameworks += new TestFramework("munit.Framework")
   )
 
 lazy val `taxonomy` = (project in file("."))
@@ -71,8 +72,8 @@ lazy val `taxonomy-scodec` = (project in file("scodec"))
   .settings(
     libraryDependencies ++= Seq(
       Dependencies.ScodecCore,
-      Dependencies.Test.ScalaTest
-    )
+      Dependencies.Test.MUnit
+    ),
   )
 
 lazy val `taxonomy-fs2` = (project in file("fs2"))
@@ -84,6 +85,6 @@ lazy val `taxonomy-fs2` = (project in file("fs2"))
       Dependencies.FS2Core,
       Dependencies.FS2IO,
       Dependencies.ScodecStream,
-      Dependencies.Test.ScalaTest
+      Dependencies.Test.MUnit
     )
   )
