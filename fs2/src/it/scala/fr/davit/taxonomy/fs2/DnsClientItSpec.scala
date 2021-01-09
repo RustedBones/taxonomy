@@ -16,27 +16,26 @@
 
 package fr.davit.taxonomy.fs2
 
-import java.net.{Inet4Address, InetAddress, InetSocketAddress}
 import cats.effect._
 import fr.davit.taxonomy.model.record.{DnsARecordData, DnsRecordClass, DnsRecordType, DnsResourceRecord}
 import fr.davit.taxonomy.model.{DnsMessage, DnsPacket, DnsQuestion, DnsType}
 import fr.davit.taxonomy.scodec.DnsCodec
 import fs2.io.udp.SocketGroup
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+import munit.FunSuite
 import scodec.Codec
 
+import java.net.{Inet4Address, InetAddress, InetSocketAddress}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-class DnsClientItSpec extends AnyFlatSpec with Matchers {
+class DnsClientItSpec extends FunSuite {
 
   val quad9DnsServer = new InetSocketAddress("9.9.9.9", 53)
 
   implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
   implicit val codec: Codec[DnsMessage]       = DnsCodec.dnsMessage
 
-  "Dns" should "lookup DNS queries" in {
+  test("lookup queries") {
     val question = DnsQuestion("davit.fr", DnsRecordType.A, unicastResponse = false, DnsRecordClass.Internet)
     val query    = DnsMessage.query(id = 1, questions = Seq(question))
     val socketResource = for {
@@ -55,6 +54,6 @@ class DnsClientItSpec extends AnyFlatSpec with Matchers {
       List.empty,
       List.empty
     )
-    response shouldBe DnsPacket(quad9DnsServer, message)
+    assertEquals(response, DnsPacket(quad9DnsServer, message))
   }
 }

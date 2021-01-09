@@ -4,8 +4,8 @@ object Dependencies {
 
   object Versions {
     val Enumeratum   = "1.6.1"
-    val FS2          = "2.4.6"
-    val ScalaTest    = "3.2.3"
+    val FS2          = "2.5.0"
+    val MUnit        = "0.7.20"
     val Scodec       = "1.11.7"
     val ScodecStream = "2.0.0"
   }
@@ -17,7 +17,7 @@ object Dependencies {
   val ScodecStream = "org.scodec"   %% "scodec-stream" % Versions.ScodecStream
 
   object Test {
-    val ScalaTest = "org.scalatest" %% "scalatest" % Versions.ScalaTest % "it,test"
+    val MUnit = "org.scalameta" %% "munit" % Versions.MUnit % "it,test"
   }
 
 }
