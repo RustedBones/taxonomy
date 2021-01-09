@@ -42,8 +42,8 @@ trait DnsCodec {
   lazy val dnsRecordType: Codec[DnsRecordType]     = uint16.xmap(DnsRecordType.withValue, _.value)
   lazy val dnsRecordClass: Codec[DnsRecordClass]   = uint(15).xmap(DnsRecordClass.withValue, _.value)
 
-  lazy val dnsHeaderCodec: Codec[DnsHeader] = fixedSizeBytes(
-    12,
+  lazy val dnsHeader: Codec[DnsHeader] = fixedSizeBytes(
+    4,
     (("id" | uint16) ::
       ("qr" | dnsType) ::
       ("op" | dnsOpCode) ::
@@ -52,12 +52,13 @@ trait DnsCodec {
       ("rd" | bool) ::
       ("ra" | bool) ::
       ("z" | constantLenient(bin"000")) :~>:
-      ("rcode" | dnsResponseCode) ::
-      ("qdcount" | uint16) ::
-      ("ancount" | uint16) ::
-      ("nscount" | uint16) ::
-      ("arcount" | uint16)).as[DnsHeader]
+      ("rcode" | dnsResponseCode)).as[DnsHeader]
   )
+
+  lazy val qdcount = "qdcount" | uint16
+  lazy val ancount = "ancount" | uint16
+  lazy val nscount = "nscount" | uint16
+  lazy val arcount = "arcount" | uint16
 
   lazy val label: Codec[String]        = constant(bin"00") ~> variableSizeBytes(uint(6), string(ascii))
   lazy val pointer: Codec[Int]         = constant(bin"11") ~> uint(14)
@@ -205,11 +206,15 @@ object DnsCodec extends DnsCodec {
     override def decode(bits: BitVector): Attempt[DecodeResult[DnsMessage]] = {
       val decoder = new DnsMessageDecoder(bits)
       for {
-        header      <- decoder.dnsHeaderCodec.decode(bits)
-        questions   <- decoder.questionSection(header.value.countQuestions).decode(header.remainder)
-        answers     <- decoder.answerSection(header.value.countAnswerRecords).decode(questions.remainder)
-        authorities <- decoder.authoritySection(header.value.countAuthorityRecords).decode(answers.remainder)
-        additionals <- decoder.additionalSection(header.value.countAdditionalRecords).decode(authorities.remainder)
+        header      <- decoder.dnsHeader.decode(bits)
+        qdcount     <- decoder.qdcount.decode(header.remainder)
+        ancount     <- decoder.ancount.decode(qdcount.remainder)
+        nscount     <- decoder.nscount.decode(ancount.remainder)
+        arcount     <- decoder.arcount.decode(nscount.remainder)
+        questions   <- decoder.questionSection(qdcount.value).decode(arcount.remainder)
+        answers     <- decoder.answerSection(ancount.value).decode(questions.remainder)
+        authorities <- decoder.authoritySection(nscount.value).decode(answers.remainder)
+        additionals <- decoder.additionalSection(arcount.value).decode(authorities.remainder)
       } yield DecodeResult(
         DnsMessage(header.value, questions.value, answers.value, authorities.value, additionals.value),
         additionals.remainder
@@ -218,12 +223,16 @@ object DnsCodec extends DnsCodec {
 
     override def encode(message: DnsMessage): Attempt[BitVector] = {
       for {
-        header      <- dnsHeaderCodec.encode(message.header)
-        questions   <- questionSection(message.header.countQuestions).encode(message.questions.toVector)
-        answers     <- answerSection(message.header.countAnswerRecords).encode(message.answers.toVector)
-        authorities <- authoritySection(message.header.countAuthorityRecords).encode(message.authorities.toVector)
-        additionals <- additionalSection(message.header.countAdditionalRecords).encode(message.additionals.toVector)
-      } yield header ++ questions ++ answers ++ authorities ++ additionals
+        header      <- dnsHeader.encode(message.header)
+        qdc         <- qdcount.encode(message.questions.size)
+        anc         <- ancount.encode(message.answers.size)
+        nsc         <- nscount.encode(message.authorities.size)
+        arc         <- arcount.encode(message.additionals.size)
+        questions   <- questionSection(message.questions.size).encode(message.questions.toVector)
+        answers     <- answerSection(message.answers.size).encode(message.answers.toVector)
+        authorities <- authoritySection(message.authorities.size).encode(message.authorities.toVector)
+        additionals <- additionalSection(message.additionals.size).encode(message.additionals.toVector)
+      } yield header ++ qdc ++ anc ++ nsc ++ arc ++ questions ++ answers ++ authorities ++ additionals
     }
   }
   // format: on

@@ -49,7 +49,7 @@ class DnsClientItSpec extends AnyFlatSpec with Matchers {
 
     val ip = InetAddress.getByName("217.70.184.38").asInstanceOf[Inet4Address]
     val message = DnsMessage(
-      query.header.copy(`type` = DnsType.Response, isRecursionAvailable = true, countAnswerRecords = 1),
+      query.header.copy(`type` = DnsType.Response, isRecursionAvailable = true),
       query.questions,
       List(DnsResourceRecord("davit.fr", cacheFlush = false, DnsRecordClass.Internet, 3.hours, DnsARecordData(ip))),
       List.empty,

@@ -50,26 +50,18 @@ class DnsCodecSpec extends AnyFlatSpec with Matchers {
       isTruncated = true,
       isRecursionDesired = false,
       isRecursionAvailable = true,
-      responseCode = DnsResponseCode.Unassigned(15),
-      countQuestions = 1,
-      countAnswerRecords = 2,
-      countAuthorityRecords = 3,
-      countAdditionalRecords = 4
+      responseCode = DnsResponseCode.Unassigned(15)
     )
 
     // format: off
                                  //                                1  1  1  1  1  1
     val data =                   //  0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
       bin"0000000001111011" ++   // |                      ID                       |
-        bin"0000101010001111" ++ // |QR|   Opcode  |AA|TC|RD|RA|   Z    |   RCODE   |
-        bin"0000000000000001" ++ // |                    QDCOUNT                    |
-        bin"0000000000000010" ++ // |                    ANCOUNT                    |
-        bin"0000000000000011" ++ // |                    NSCOUNT                    |
-        bin"0000000000000100"    // |                    ARCOUNT                    |
+        bin"0000101010001111"    // |QR|   Opcode  |AA|TC|RD|RA|   Z    |   RCODE   |
     // format: on
 
-    DnsCodec.dnsHeaderCodec.encode(header).require shouldBe data
-    DnsCodec.dnsHeaderCodec.complete.decode(data).require.value shouldBe header
+    DnsCodec.dnsHeader.encode(header).require shouldBe data
+    DnsCodec.dnsHeader.complete.decode(data).require.value shouldBe header
   }
 
   it should "encode / decode domain name" in {
@@ -144,11 +136,7 @@ class DnsCodecSpec extends AnyFlatSpec with Matchers {
       isTruncated = false,
       isRecursionDesired = true,
       isRecursionAvailable = false,
-      responseCode = DnsResponseCode.Success,
-      countQuestions = 1,
-      countAnswerRecords = 0,
-      countAuthorityRecords = 0,
-      countAdditionalRecords = 0
+      responseCode = DnsResponseCode.Success
     )
     val question = DnsQuestion(
       name = "davit.fr",
@@ -179,8 +167,7 @@ class DnsCodecSpec extends AnyFlatSpec with Matchers {
       header.copy(
         `type` = DnsType.Response,
         isRecursionDesired = true,
-        isRecursionAvailable = true,
-        countAnswerRecords = 1
+        isRecursionAvailable = true
       ),
       List(question),
       List(answer),

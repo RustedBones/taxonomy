@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Remove sizes from header model
+
 ## 0.2.0 (2020-12-20)
 
 - Improve Dns listen API and move DnsPacket to model
