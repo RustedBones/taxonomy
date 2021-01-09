@@ -1,7 +1,7 @@
 # taxonomy
 
 [![Continuous Integration](https://github.com/RustedBones/taxonomy/workflows/Continuous%20Integration/badge.svg?branch=master)](https://github.com/RustedBones/taxonomy/actions?query=branch%3Amaster+workflow%3A"Continuous+Integration")
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/fr.davit/taxonomy_2.13/badge.svg)](https://maven-badges.herokuapp.com/maven-central/fr.davit/taxonomy_2.13)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/fr.davit/taxonomy-model_2.13/badge.svg)](https://maven-badges.herokuapp.com/maven-central/fr.davit/taxonomy-model_2.13)
 [![Software License](https://img.shields.io/badge/license-Apache%202-brightgreen.svg?style=flat)](LICENSE)
 
 Strongly typed DNS for scala based on the [cats ecosystem](https://github.com/typelevel/cats)
