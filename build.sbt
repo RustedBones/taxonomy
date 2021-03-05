@@ -18,7 +18,6 @@ ThisBuild / githubWorkflowBuild := Seq(
 ThisBuild / githubWorkflowTargetBranches := Seq("master")
 ThisBuild / githubWorkflowPublishTargetBranches := Seq.empty
 
-
 lazy val commonSettings = Defaults.itSettings ++
   headerSettings(Configurations.IntegrationTest) ++
   Seq(
@@ -73,7 +72,7 @@ lazy val `taxonomy-scodec` = (project in file("scodec"))
     libraryDependencies ++= Seq(
       Dependencies.ScodecCore,
       Dependencies.Test.MUnit
-    ),
+    )
   )
 
 lazy val `taxonomy-fs2` = (project in file("fs2"))
