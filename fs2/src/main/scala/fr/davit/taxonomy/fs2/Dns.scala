@@ -30,7 +30,7 @@ object Dns {
   def resolverConfiguration[F[_]: Sync]: Resource[F, ResolverConfiguration] =
     Resource.make(Sync[F].delay(ResolverConfiguration.open()))(_ => Sync[F].unit)
 
-  def resolve[F[_]: Concurrent: ContextShift](
+  def resolve[F[_]: Sync](
       socket: Socket[F],
       packet: DnsPacket
   )(implicit codec: Codec[DnsMessage]): F[DnsPacket] =
@@ -41,7 +41,7 @@ object Dns {
       message  <- Sync[F].delay(codec.decode(response.bytes.toByteVector.toBitVector).require.value)
     } yield DnsPacket(response.remote, message)
 
-  def stream[F[_]: Concurrent: ContextShift](
+  def stream[F[_]: RaiseThrowable](
       socket: Socket[F]
   )(implicit codec: Codec[DnsMessage]): Pipe[F, DnsPacket, Unit] = { input =>
     for {
@@ -54,7 +54,7 @@ object Dns {
     } yield ()
   }
 
-  def listen[F[_]: Concurrent: ContextShift](
+  def listen[F[_]: RaiseThrowable](
       socket: Socket[F]
   )(implicit codec: Codec[DnsMessage]): Stream[F, DnsPacket] =
     for {
