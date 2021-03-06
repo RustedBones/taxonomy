@@ -10,14 +10,13 @@ lazy val filterScalacOptions = { options: Seq[String] =>
 }
 
 // for sbt-github-actions
-ThisBuild / crossScalaVersions := Seq("2.13.4", "2.12.12")
+ThisBuild / crossScalaVersions := Seq("2.13.5", "2.12.13")
 ThisBuild / githubWorkflowBuild := Seq(
   WorkflowStep.Sbt(name = Some("Check project"), commands = List("scalafmtCheckAll", "headerCheckAll")),
   WorkflowStep.Sbt(name = Some("Build project"), commands = List("test"))
 )
 ThisBuild / githubWorkflowTargetBranches := Seq("master")
 ThisBuild / githubWorkflowPublishTargetBranches := Seq.empty
-
 
 lazy val commonSettings = Defaults.itSettings ++
   headerSettings(Configurations.IntegrationTest) ++
@@ -73,7 +72,7 @@ lazy val `taxonomy-scodec` = (project in file("scodec"))
     libraryDependencies ++= Seq(
       Dependencies.ScodecCore,
       Dependencies.Test.MUnit
-    ),
+    )
   )
 
 lazy val `taxonomy-fs2` = (project in file("fs2"))

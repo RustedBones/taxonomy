@@ -137,13 +137,12 @@ trait DnsCodec {
 
   lazy val dnsResourceRecord: Codec[DnsResourceRecord] =
     (("name" | domainName) :: ("type" | dnsRecordType))
-      .consume[DnsResourceRecord] {
-        case name :: recordType :: HNil =>
-          (provide(name) ::
-            ("cache-flush" | bool) ::
-            ("class" | dnsRecordClass) ::
-            ("ttl" | ttl) ::
-            ("rdata" | rdata(recordType))).as[DnsResourceRecord]
+      .consume[DnsResourceRecord] { case name :: recordType :: HNil =>
+        (provide(name) ::
+          ("cache-flush" | bool) ::
+          ("class" | dnsRecordClass) ::
+          ("ttl" | ttl) ::
+          ("rdata" | rdata(recordType))).as[DnsResourceRecord]
       } { rr =>
         rr.name :: rr.data.`type` :: HNil
       }
@@ -170,27 +169,26 @@ class DnsMessageDecoder(bits: BitVector) extends DnsCodec {
   override lazy val labels: Codec[List[String]] = Codec.lazily(
     Codec(
       variableSizeDelimited(constant(BitVector.lowByte), list(label), 1),
-      Decoder(
-        data =>
-          fallback(pointer, label)
-            .decode(data)
-            .flatMap { result =>
-              result.value match {
-                case Right("") =>
-                  val remainder = stash.getOrElse(result.remainder)
-                  stash = None
-                  seenPtrs.clear()
-                  Successful(DecodeResult(Nil, remainder))
-                case Right(label) =>
-                  labels.decode(result.remainder).map(_.map(domain => label :: domain))
-                case Left(ptr) if seenPtrs.contains(ptr) =>
-                  Failure(Err("Name contains a pointer that loops"))
-                case Left(ptr) =>
-                  if (stash.isEmpty) stash = Some(result.remainder)
-                  seenPtrs += ptr
-                  labels.decode(bits.drop(ptr * 8L))
-              }
+      Decoder(data =>
+        fallback(pointer, label)
+          .decode(data)
+          .flatMap { result =>
+            result.value match {
+              case Right("") =>
+                val remainder = stash.getOrElse(result.remainder)
+                stash = None
+                seenPtrs.clear()
+                Successful(DecodeResult(Nil, remainder))
+              case Right(label) =>
+                labels.decode(result.remainder).map(_.map(domain => label :: domain))
+              case Left(ptr) if seenPtrs.contains(ptr) =>
+                Failure(Err("Name contains a pointer that loops"))
+              case Left(ptr) =>
+                if (stash.isEmpty) stash = Some(result.remainder)
+                seenPtrs += ptr
+                labels.decode(bits.drop(ptr * 8L))
             }
+          }
       )
     )
   )
