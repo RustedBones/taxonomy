@@ -4,7 +4,7 @@ object Dependencies {
 
   object Versions {
     val Enumeratum   = "1.6.1"
-    val FS2          = "2.5.4"
+    val FS2          = "3.0.1"
     val MUnit        = "0.7.23"
     val Scodec       = "1.11.7"
     val ScodecStream = "2.0.1"
