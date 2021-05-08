@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.0.0 (2021-05-09)
+
+- Update to cats-effect 3.0
+
 ## 0.3.0 (2021-01-09)
 
 - Update dependencies
