@@ -18,9 +18,10 @@ package fr.davit.taxonomy.fs2
 
 import cats.effect._
 import cats.implicits._
+import com.comcast.ip4s.SocketAddress
 import fr.davit.taxonomy.model.{DnsMessage, DnsPacket}
 import fs2._
-import fs2.io.udp.{Packet, Socket}
+import fs2.io.net.{Datagram, DatagramSocket}
 import scodec.Codec
 import scodec.stream.{StreamDecoder, StreamEncoder}
 import sun.net.dns.ResolverConfiguration
@@ -31,36 +32,37 @@ object Dns {
     Resource.make(Sync[F].delay(ResolverConfiguration.open()))(_ => Sync[F].unit)
 
   def resolve[F[_]: Sync](
-      socket: Socket[F],
+      socket: DatagramSocket[F],
       packet: DnsPacket
   )(implicit codec: Codec[DnsMessage]): F[DnsPacket] =
     for {
-      data     <- Sync[F].delay(codec.encode(packet.message).require)
-      _        <- socket.write(Packet(packet.address, Chunk.byteVector(data.toByteVector)))
-      response <- socket.read()
+      data <- Sync[F].delay(codec.encode(packet.message).require)
+      address = SocketAddress.fromInetSocketAddress(packet.address)
+      _        <- socket.write(Datagram(address, Chunk.byteVector(data.toByteVector)))
+      response <- socket.read
       message  <- Sync[F].delay(codec.decode(response.bytes.toByteVector.toBitVector).require.value)
-    } yield DnsPacket(response.remote, message)
+    } yield DnsPacket(response.remote.toInetSocketAddress, message)
 
   def stream[F[_]: RaiseThrowable](
-      socket: Socket[F]
-  )(implicit codec: Codec[DnsMessage]): Pipe[F, DnsPacket, Unit] = { input =>
-    for {
-      packet <- input
-      _ <- Stream(packet.message)
+      socket: DatagramSocket[F]
+  )(implicit codec: Codec[DnsMessage]): Pipe[F, DnsPacket, INothing] = { input =>
+    input.flatMap { packet =>
+      val address = SocketAddress.fromInetSocketAddress(packet.address)
+      Stream(packet.message)
         .through(StreamEncoder.once(codec).toPipeByte[F])
         .chunks
-        .map(data => Packet(packet.address, data))
-        .through(socket.writes())
-    } yield ()
+        .map(data => Datagram(address, data))
+        .through(socket.writes)
+    }
   }
 
   def listen[F[_]: RaiseThrowable](
-      socket: Socket[F]
+      socket: DatagramSocket[F]
   )(implicit codec: Codec[DnsMessage]): Stream[F, DnsPacket] =
     for {
-      datagram <- socket.reads()
+      datagram <- socket.reads
       message <- Stream
         .chunk(datagram.bytes)
         .through(StreamDecoder.once(codec).toPipeByte[F])
-    } yield DnsPacket(datagram.remote, message)
+    } yield DnsPacket(datagram.remote.toInetSocketAddress, message)
 }

@@ -43,29 +43,24 @@ Here is a quick example of a DNS lookup to the `9.9.9.9` DNS server for the `dav
 import java.net.{Inet4Address, InetAddress, InetSocketAddress}
 
 import cats.effect._
+import cats.effect.unsafe.implicits._
 import fr.davit.taxonomy.model.record._
 import fr.davit.taxonomy.model._
 import fr.davit.taxonomy.scodec.DnsCodec
-import fs2.io.udp.SocketGroup
+import fs2.io.net.Network
+import munit.CatsEffectSuite
 import scodec.Codec
 
-import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-implicit val codec: Codec[DnsMessage]       = DnsCodec.dnsMessage
+implicit val codec: Codec[DnsMessage] = DnsCodec.dnsMessage
 
 val quad9DnsServer = new InetSocketAddress("9.9.9.9", 53)
 
-val question = DnsQuestion("davit.fr", DnsRecordType.A, unicastResponse = false, DnsRecordClass.Internet)
-val query    = DnsMessage.query(id = 1, questions = Seq(question))
-val socketResource = for {
-  blocker     <- Blocker[IO]
-  socketGroup <- SocketGroup[IO](blocker)
-  socket      <- socketGroup.open[IO]()
-} yield socket
-
-val response = socketResource.use(s => Dns.resolve(s, DnsPacket(quad9DnsServer, query))).unsafeRunSync()
+val question        = DnsQuestion("davit.fr", DnsRecordType.A, unicastResponse = false, DnsRecordClass.Internet)
+val query           = DnsMessage.query(id = 1, questions = Seq(question))
+val socketResource  = Network[IO].openDatagramSocket()
+val response        = socketResource.use(s => Dns.resolve(s, DnsPacket(quad9DnsServer, query))).unsafeRunSync()
 ```
 
 ## Based on taxonomy

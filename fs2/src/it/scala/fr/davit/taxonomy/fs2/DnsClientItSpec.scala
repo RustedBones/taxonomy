@@ -17,34 +17,28 @@
 package fr.davit.taxonomy.fs2
 
 import cats.effect._
+import com.comcast.ip4s.{Dns => _}
 import fr.davit.taxonomy.model.record.{DnsARecordData, DnsRecordClass, DnsRecordType, DnsResourceRecord}
 import fr.davit.taxonomy.model.{DnsMessage, DnsPacket, DnsQuestion, DnsType}
 import fr.davit.taxonomy.scodec.DnsCodec
-import fs2.io.udp.SocketGroup
-import munit.FunSuite
+import fs2.io.net.Network
+import munit.CatsEffectSuite
 import scodec.Codec
 
 import java.net.{Inet4Address, InetAddress, InetSocketAddress}
-import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-class DnsClientItSpec extends FunSuite {
+class DnsClientItSpec extends CatsEffectSuite {
+
+  implicit val codec: Codec[DnsMessage] = DnsCodec.dnsMessage
 
   val quad9DnsServer = new InetSocketAddress("9.9.9.9", 53)
 
-  implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-  implicit val codec: Codec[DnsMessage]       = DnsCodec.dnsMessage
-
   test("lookup queries") {
-    val question = DnsQuestion("davit.fr", DnsRecordType.A, unicastResponse = false, DnsRecordClass.Internet)
-    val query    = DnsMessage.query(id = 1, questions = Seq(question))
-    val socketResource = for {
-      blocker     <- Blocker[IO]
-      socketGroup <- SocketGroup[IO](blocker)
-      socket      <- socketGroup.open[IO]()
-    } yield socket
-
-    val response = socketResource.use(s => Dns.resolve(s, DnsPacket(quad9DnsServer, query))).unsafeRunSync()
+    val question       = DnsQuestion("davit.fr", DnsRecordType.A, unicastResponse = false, DnsRecordClass.Internet)
+    val query          = DnsMessage.query(id = 1, questions = Seq(question))
+    val socketResource = Network[IO].openDatagramSocket()
+    val response       = socketResource.use(s => Dns.resolve(s, DnsPacket(quad9DnsServer, query)))
 
     val ip = InetAddress.getByName("217.70.184.38").asInstanceOf[Inet4Address]
     val message = DnsMessage(
@@ -54,6 +48,6 @@ class DnsClientItSpec extends FunSuite {
       List.empty,
       List.empty
     )
-    assertEquals(response, DnsPacket(quad9DnsServer, message))
+    response assertEquals DnsPacket(quad9DnsServer, message)
   }
 }
