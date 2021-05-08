@@ -71,7 +71,7 @@ lazy val `taxonomy-scodec` = (project in file("scodec"))
   .settings(
     libraryDependencies ++= Seq(
       Dependencies.ScodecCore,
-      Dependencies.Test.MUnit
+      Dependencies.Test.MUnitCE3
     )
   )
 
@@ -84,6 +84,6 @@ lazy val `taxonomy-fs2` = (project in file("fs2"))
       Dependencies.FS2Core,
       Dependencies.FS2IO,
       Dependencies.ScodecStream,
-      Dependencies.Test.MUnit
+      Dependencies.Test.MUnitCE3
     )
   )
