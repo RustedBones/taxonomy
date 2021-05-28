@@ -7,7 +7,7 @@ object Dependencies {
     val FS2          = "3.0.2"
     val MUnitCE3     = "1.0.2"
     val Scodec       = "1.11.7"
-    val ScodecStream = "3.0.0"
+    val ScodecStream = "3.0.1"
   }
 
   val Enumeratum   = "com.beachape" %% "enumeratum"    % Versions.Enumeratum
