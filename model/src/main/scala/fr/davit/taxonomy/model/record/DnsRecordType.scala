@@ -100,7 +100,7 @@ enum DnsRecordType(val code: Int):
   case Unassigned(value: Int) extends DnsRecordType(value)
 
 object DnsRecordType:
-  def apply(code: Int): DnsRecordType = code match {
+  def apply(code: Int): DnsRecordType = code match
     case 1                     => A
     case 2                     => NS
     case 3                     => MD
@@ -183,4 +183,3 @@ object DnsRecordType:
     case 255                   => `*`
     case c if 0 < c && c < 256 => Unassigned(c)
     case _                     => throw new IllegalArgumentException(s"Invalid dns record type $code")
-  }

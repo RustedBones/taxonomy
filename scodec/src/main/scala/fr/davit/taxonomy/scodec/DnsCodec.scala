@@ -28,7 +28,7 @@ import java.nio.charset.Charset
 import scala.collection.mutable
 import scala.concurrent.duration._
 
-trait DnsCodec {
+trait DnsCodec:
 
   lazy val ascii: Charset = Charset.forName("US-ASCII")
 
@@ -156,7 +156,7 @@ trait DnsCodec {
 
   def additionalSection(count: Int): Codec[Vector[DnsResourceRecord]] =
     "arsection" | vectorOfN(provide(count), dnsResourceRecord)
-}
+end DnsCodec
 
 class DnsMessageDecoder(bits: BitVector) extends DnsCodec:
 
@@ -171,7 +171,7 @@ class DnsMessageDecoder(bits: BitVector) extends DnsCodec:
         fallback(pointer, label)
           .decode(data)
           .flatMap { result =>
-            result.value match {
+            result.value match
               case Right("") =>
                 val remainder = stash.getOrElse(result.remainder)
                 stash = None
@@ -185,7 +185,6 @@ class DnsMessageDecoder(bits: BitVector) extends DnsCodec:
                 if (stash.isEmpty) stash = Some(result.remainder)
                 seenPtrs += ptr
                 labels.decode(bits.drop(ptr * 8L))
-            }
           }
       )
     )
@@ -200,7 +199,7 @@ object DnsCodec extends DnsCodec:
 
     override def decode(bits: BitVector): Attempt[DecodeResult[DnsMessage]] =
       val decoder = new DnsMessageDecoder(bits)
-      for {
+      for
         header      <- decoder.dnsHeader.decode(bits)
         qdcount     <- decoder.qdcount.decode(header.remainder)
         ancount     <- decoder.ancount.decode(qdcount.remainder)
@@ -210,12 +209,13 @@ object DnsCodec extends DnsCodec:
         answers     <- decoder.answerSection(ancount.value).decode(questions.remainder)
         authorities <- decoder.authoritySection(nscount.value).decode(answers.remainder)
         additionals <- decoder.additionalSection(arcount.value).decode(authorities.remainder)
-      } yield DecodeResult(
+      yield DecodeResult(
         DnsMessage(header.value, questions.value, answers.value, authorities.value, additionals.value),
         additionals.remainder
       )
 
-    override def encode(message: DnsMessage): Attempt[BitVector] = for {
+    override def encode(message: DnsMessage): Attempt[BitVector] =
+      for
         header      <- dnsHeader.encode(message.header)
         qdc         <- qdcount.encode(message.questions.size)
         anc         <- ancount.encode(message.answers.size)
@@ -225,7 +225,7 @@ object DnsCodec extends DnsCodec:
         answers     <- answerSection(message.answers.size).encode(message.answers.toVector)
         authorities <- authoritySection(message.authorities.size).encode(message.authorities.toVector)
         additionals <- additionalSection(message.additionals.size).encode(message.additionals.toVector)
-      } yield header ++ qdc ++ anc ++ nsc ++ arc ++ questions ++ answers ++ authorities ++ additionals
+      yield header ++ qdc ++ anc ++ nsc ++ arc ++ questions ++ answers ++ authorities ++ additionals
   end dnsMessage
   // format: on
 

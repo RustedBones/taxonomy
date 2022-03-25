@@ -34,11 +34,10 @@ enum DnsType(val code: Int):
   case Response extends DnsType(1)
 
 object DnsType:
-  def apply(code: Int): DnsType = code match {
+  def apply(code: Int): DnsType = code match
     case 0 => Query
     case 1 => Response
     case _ => throw new IllegalArgumentException(s"Invalid dns type $code")
-  }
 
 enum DnsOpCode(val code: Int):
   case StandardQuery extends DnsOpCode(0)
@@ -50,7 +49,7 @@ enum DnsOpCode(val code: Int):
   case Unassigned(value: Int) extends DnsOpCode(value)
 
 object DnsOpCode:
-  def apply(code: Int): DnsOpCode = code match {
+  def apply(code: Int): DnsOpCode = code match
     case 0                     => StandardQuery
     case 1                     => InverseQuery
     case 2                     => ServerStatusRequest
@@ -59,7 +58,6 @@ object DnsOpCode:
     case 6                     => DnsStatefulOperations
     case c if 0 <= c && c < 16 => Unassigned(c)
     case _                     => throw new IllegalArgumentException(s"Invalid dns op code $code")
-  }
 
 enum DnsResponseCode(val code: Int):
   case Success extends DnsResponseCode(0)
@@ -77,7 +75,7 @@ enum DnsResponseCode(val code: Int):
   case Unassigned(value: Int) extends DnsResponseCode(value)
 
 object DnsResponseCode:
-  def apply(code: Int): DnsResponseCode = code match {
+  def apply(code: Int): DnsResponseCode = code match
     case 0                     => Success
     case 1                     => FormatError
     case 2                     => ServerFailure
@@ -92,4 +90,3 @@ object DnsResponseCode:
     case 11                    => DsoTypeNotImplemented
     case c if 0 <= c && c < 16 => Unassigned(c)
     case _                     => throw new IllegalArgumentException(s"Invalid dns response code $code")
-  }

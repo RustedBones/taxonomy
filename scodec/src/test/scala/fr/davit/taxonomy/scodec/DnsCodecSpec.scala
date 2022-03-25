@@ -26,18 +26,15 @@ import scodec.{Attempt, Err}
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
-class DnsCodecSpec extends FunSuite {
+class DnsCodecSpec extends FunSuite:
 
-  def resourceBin(path: String): BitVector = {
+  def resourceBin(path: String): BitVector =
     val responseInputStream = getClass.getResourceAsStream(path)
-    try {
-      BitVector.fromInputStream(responseInputStream)
-    } catch {
+    try BitVector.fromInputStream(responseInputStream)
+    catch
       case NonFatal(e) =>
         responseInputStream.close()
         throw e
-    }
-  }
 
   test("encode / decode dns header") {
     val header = DnsHeader(
@@ -176,5 +173,4 @@ class DnsCodecSpec extends FunSuite {
     // DnsCodec.dnsMesage.encode(response).require shouldBe data
     assertEquals(DnsCodec.dnsMessage.complete.decode(data).require.value, response)
   }
-
-}
+end DnsCodecSpec

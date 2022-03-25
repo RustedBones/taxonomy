@@ -35,13 +35,13 @@ object Dns:
       socket: DatagramSocket[F],
       packet: DnsPacket
   )(implicit codec: Codec[DnsMessage]): F[DnsPacket] =
-    for {
+    for
       data <- Sync[F].delay(codec.encode(packet.message).require)
       address = SocketAddress.fromInetSocketAddress(packet.address)
       _        <- socket.write(Datagram(address, Chunk.byteVector(data.toByteVector)))
       response <- socket.read
       message  <- Sync[F].delay(codec.decode(response.bytes.toByteVector.toBitVector).require.value)
-    } yield DnsPacket(response.remote.toInetSocketAddress, message)
+    yield DnsPacket(response.remote.toInetSocketAddress, message)
 
   def stream[F[_]: RaiseThrowable](
       socket: DatagramSocket[F]
@@ -57,9 +57,9 @@ object Dns:
   def listen[F[_]: RaiseThrowable](
       socket: DatagramSocket[F]
   )(implicit codec: Codec[DnsMessage]): Stream[F, DnsPacket] =
-    for {
+    for
       datagram <- socket.reads
       message <- Stream
         .chunk(datagram.bytes)
         .through(StreamDecoder.once(codec).toPipeByte[F])
-    } yield DnsPacket(datagram.remote.toInetSocketAddress, message)
+    yield DnsPacket(datagram.remote.toInetSocketAddress, message)
