@@ -70,7 +70,7 @@ lazy val `taxonomy-fs2` = (project in file("fs2"))
     libraryDependencies ++= Seq(
       Dependencies.FS2Core,
       Dependencies.FS2IO,
-      Dependencies.ScodecStream,
+      Dependencies.FS2Scodec,
       Dependencies.Test.MUnitCE3
     )
   )
