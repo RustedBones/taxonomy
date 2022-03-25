@@ -17,7 +17,6 @@ lazy val commonSettings = Defaults.itSettings ++
   Seq(
     organization := "fr.davit",
     organizationName := "Michel Davit",
-    version := "1.0.1-SNAPSHOT",
     scalaVersion := (ThisBuild / scalaVersion).value,
     homepage := Some(url(s"https://github.com/$username/$repo")),
     licenses += ("Apache-2.0", new URL("https://www.apache.org/licenses/LICENSE-2.0.txt")),
