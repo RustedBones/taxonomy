@@ -16,14 +16,14 @@
 
 package fr.davit.taxonomy.fs2
 
-import cats.effect._
-import cats.implicits._
+import cats.effect.*
+import cats.implicits.*
 import com.comcast.ip4s.SocketAddress
 import fr.davit.taxonomy.model.{DnsMessage, DnsPacket}
-import fs2._
+import fs2.*
+import fs2.interop.scodec.{StreamDecoder, StreamEncoder}
 import fs2.io.net.{Datagram, DatagramSocket}
 import scodec.Codec
-import scodec.stream.{StreamDecoder, StreamEncoder}
 import sun.net.dns.ResolverConfiguration
 
 object Dns:
