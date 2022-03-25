@@ -7,7 +7,7 @@ val repo     = "taxonomy"
 ThisBuild / scalaVersion := "3.1.1"
 ThisBuild / githubWorkflowBuild := Seq(
   WorkflowStep.Sbt(name = Some("Check project"), commands = List("scalafmtCheckAll", "headerCheckAll")),
-  WorkflowStep.Sbt(name = Some("Build project"), commands = List("test"))
+  WorkflowStep.Sbt(name = Some("Build project"), commands = List("test", "IntegrationTest/test"))
 )
 ThisBuild / githubWorkflowTargetBranches := Seq("master")
 ThisBuild / githubWorkflowPublishTargetBranches := Seq.empty

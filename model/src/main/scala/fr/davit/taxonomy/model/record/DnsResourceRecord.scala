@@ -38,14 +38,13 @@ enum DnsRecordClass(val code: Int):
   case Unassigned(value: Int) extends DnsRecordClass(value)
 
 object DnsRecordClass:
-  def apply(code: Int): DnsRecordClass = code match {
+  def apply(code: Int): DnsRecordClass = code match
     case 1                      => Internet
     case 3                      => Chaos
     case 4                      => Hesiod
     case 254                    => None
     case 255                    => Any
     case c if 0 <= c && c < 256 => Unassigned(c)
-  }
 
 abstract class DnsRecordData(val `type`: DnsRecordType)
 
