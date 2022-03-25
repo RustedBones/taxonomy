@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.1.0 (2022-03-25)
+
+- Update to scala 3
+
 ## 1.0.0 (2021-05-09)
 
 - Update to cats-effect 3.0
