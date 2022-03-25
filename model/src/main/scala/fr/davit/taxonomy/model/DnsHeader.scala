@@ -16,9 +16,6 @@
 
 package fr.davit.taxonomy.model
 
-import enumeratum.ValueEnumMacros
-import enumeratum.values.{IntEnum, IntEnumEntry}
-
 import scala.collection.immutable
 
 final case class DnsHeader(
@@ -32,67 +29,67 @@ final case class DnsHeader(
     responseCode: DnsResponseCode
 )
 
-sealed abstract class DnsType(val value: Int) extends IntEnumEntry
+enum DnsType(val code: Int):
+  case Query extends DnsType(0)
+  case Response extends DnsType(1)
 
-object DnsType extends IntEnum[DnsType] {
+object DnsType:
+  def apply(code: Int): DnsType = code match {
+    case 0 => Query
+    case 1 => Response
+    case _ => throw new IllegalArgumentException(s"Invalid dns type $code")
+  }
 
-  case object Query extends DnsType(0)
-  case object Response extends DnsType(1)
+enum DnsOpCode(val code: Int):
+  case StandardQuery extends DnsOpCode(0)
+  case InverseQuery extends DnsOpCode(1)
+  case ServerStatusRequest extends DnsOpCode(2)
+  case Notify extends DnsOpCode(4)
+  case Update extends DnsOpCode(5)
+  case DnsStatefulOperations extends DnsOpCode(6)
+  case Unassigned(value: Int) extends DnsOpCode(value)
 
-  override lazy val values: immutable.IndexedSeq[DnsType] = findValues
-}
+object DnsOpCode:
+  def apply(code: Int): DnsOpCode = code match {
+    case 0                     => StandardQuery
+    case 1                     => InverseQuery
+    case 2                     => ServerStatusRequest
+    case 4                     => Notify
+    case 5                     => Update
+    case 6                     => DnsStatefulOperations
+    case c if 0 <= c && c < 16 => Unassigned(c)
+    case _                     => throw new IllegalArgumentException(s"Invalid dns op code $code")
+  }
 
-sealed trait DnsOpCode extends IntEnumEntry
+enum DnsResponseCode(val code: Int):
+  case Success extends DnsResponseCode(0)
+  case FormatError extends DnsResponseCode(1)
+  case ServerFailure extends DnsResponseCode(2)
+  case NonExistentDomain extends DnsResponseCode(3)
+  case NotImplemented extends DnsResponseCode(4)
+  case Refused extends DnsResponseCode(5)
+  case ExtraDomain extends DnsResponseCode(6)
+  case ExtraRRSet extends DnsResponseCode(7)
+  case NonExistentRRSet extends DnsResponseCode(8)
+  case NotAuth extends DnsResponseCode(9)
+  case NotZone extends DnsResponseCode(10)
+  case DsoTypeNotImplemented extends DnsResponseCode(11)
+  case Unassigned(value: Int) extends DnsResponseCode(value)
 
-object DnsOpCode extends IntEnum[DnsOpCode] {
-
-  sealed abstract class Assigned(val value: Int) extends DnsOpCode
-  final case class Unassigned(value: Int) extends DnsOpCode
-
-  case object StandardQuery extends Assigned(0)
-  case object InverseQuery extends Assigned(1)
-  case object ServerStatusRequest extends Assigned(2)
-
-  case object Notify extends Assigned(4)
-  case object Update extends Assigned(5)
-  case object DnsStatefulOperations extends Assigned(6)
-
-  private def assignedValues: immutable.IndexedSeq[Assigned] =
-    macro ValueEnumMacros.findIntValueEntriesImpl[Assigned]
-
-  private def unassignedValues: immutable.IndexedSeq[Unassigned] =
-    Unassigned(3) +: (7 until 16).map(Unassigned)
-
-  override def values: immutable.IndexedSeq[DnsOpCode] =
-    assignedValues ++ unassignedValues
-}
-
-sealed trait DnsResponseCode extends IntEnumEntry
-
-object DnsResponseCode extends IntEnum[DnsResponseCode] {
-
-  sealed abstract class Assigned(val value: Int) extends DnsResponseCode
-  final case class Unassigned(value: Int) extends DnsResponseCode
-
-  case object Success extends Assigned(0)
-  case object FormatError extends Assigned(1)
-  case object ServerFailure extends Assigned(2)
-  case object NonExistentDomain extends Assigned(3)
-  case object NotImplemented extends Assigned(4)
-  case object Refused extends Assigned(5)
-  case object ExtraDomain extends Assigned(6)
-  case object ExtraRRSet extends Assigned(7)
-  case object NonExistentRRSet extends Assigned(8)
-  case object NotAuth extends Assigned(9)
-  case object NotZone extends Assigned(10)
-  case object DsoTypeNotImplemented extends Assigned(11)
-
-  private def assignedValues: immutable.IndexedSeq[Assigned] =
-    macro ValueEnumMacros.findIntValueEntriesImpl[Assigned]
-
-  private def unassignedValues: immutable.IndexedSeq[Unassigned] =
-    (12 until 16).map(Unassigned)
-
-  override lazy val values: immutable.IndexedSeq[DnsResponseCode] =
-    assignedValues ++ unassignedValues
-}
+object DnsResponseCode:
+  def apply(code: Int): DnsResponseCode = code match {
+    case 0                     => Success
+    case 1                     => FormatError
+    case 2                     => ServerFailure
+    case 3                     => NonExistentDomain
+    case 4                     => NotImplemented
+    case 5                     => Refused
+    case 6                     => ExtraDomain
+    case 7                     => ExtraRRSet
+    case 8                     => NonExistentRRSet
+    case 9                     => NotAuth
+    case 10                    => NotZone
+    case 11                    => DsoTypeNotImplemented
+    case c if 0 <= c && c < 16 => Unassigned(c)
+    case _                     => throw new IllegalArgumentException(s"Invalid dns response code $code")
+  }

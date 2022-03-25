@@ -22,7 +22,6 @@ import _root_.scodec.{Attempt, Codec, DecodeResult, Decoder, Err, SizeBound}
 import fr.davit.taxonomy.model.record._
 import fr.davit.taxonomy.model._
 import scodec.Attempt.{Failure, Successful}
-import shapeless._
 
 import java.net.{Inet4Address, Inet6Address, InetAddress}
 import java.nio.charset.Charset
@@ -36,11 +35,11 @@ trait DnsCodec {
   def size16(size: Int): Codec[Unit] = constant(BitVector.fromInt(size, 16))
 
   lazy val characterString: Codec[String]          = variableSizeBytes(uint8, string(ascii))
-  lazy val dnsType: Codec[DnsType]                 = uint(1).xmap(DnsType.withValue, _.value)
-  lazy val dnsOpCode: Codec[DnsOpCode]             = uint4.xmap(DnsOpCode.withValue, _.value)
-  lazy val dnsResponseCode: Codec[DnsResponseCode] = uint4.xmap(DnsResponseCode.withValue, _.value)
-  lazy val dnsRecordType: Codec[DnsRecordType]     = uint16.xmap(DnsRecordType.withValue, _.value)
-  lazy val dnsRecordClass: Codec[DnsRecordClass]   = uint(15).xmap(DnsRecordClass.withValue, _.value)
+  lazy val dnsType: Codec[DnsType]                 = uint(1).xmap(DnsType.apply, _.code)
+  lazy val dnsOpCode: Codec[DnsOpCode]             = uint4.xmap(DnsOpCode.apply, _.code)
+  lazy val dnsResponseCode: Codec[DnsResponseCode] = uint4.xmap(DnsResponseCode.apply, _.code)
+  lazy val dnsRecordType: Codec[DnsRecordType]     = uint16.xmap(DnsRecordType.apply, _.code)
+  lazy val dnsRecordClass: Codec[DnsRecordClass]   = uint(15).xmap(DnsRecordClass.apply, _.code)
 
   lazy val dnsHeader: Codec[DnsHeader] = fixedSizeBytes(
     4,
@@ -51,7 +50,7 @@ trait DnsCodec {
       ("tc" | bool) ::
       ("rd" | bool) ::
       ("ra" | bool) ::
-      ("z" | constantLenient(bin"000")) :~>:
+      ("z" | constantLenient(bin"000")) ~>
       ("rcode" | dnsResponseCode)).as[DnsHeader]
   )
 
@@ -101,7 +100,8 @@ trait DnsCodec {
 
   lazy val dnsSRVRecordData: Codec[DnsSRVRecordData] =
     (uint16 :: uint16 :: uint16 :: domainName).as[DnsSRVRecordData]
-  lazy val dnsTXTRecordData: Codec[DnsTXTRecordData] = vector(characterString).xmap(DnsTXTRecordData, _.txt.toVector)
+  lazy val dnsTXTRecordData: Codec[DnsTXTRecordData] =
+    vector(characterString).xmap(DnsTXTRecordData.apply, _.txt.toVector)
 
   def dnsRawRecordData(recordType: DnsRecordType): Codec[DnsRawRecordData] =
     vector(byte).xmap(DnsRawRecordData(recordType, _), _.data.toVector)
@@ -137,15 +137,13 @@ trait DnsCodec {
 
   lazy val dnsResourceRecord: Codec[DnsResourceRecord] =
     (("name" | domainName) :: ("type" | dnsRecordType))
-      .consume[DnsResourceRecord] { case name :: recordType :: HNil =>
+      .consume[DnsResourceRecord] { case (name, recordType) =>
         (provide(name) ::
           ("cache-flush" | bool) ::
           ("class" | dnsRecordClass) ::
           ("ttl" | ttl) ::
           ("rdata" | rdata(recordType))).as[DnsResourceRecord]
-      } { rr =>
-        rr.name :: rr.data.`type` :: HNil
-      }
+      } { rr => (rr.name, rr.data.`type`) }
 
   def questionSection(count: Int): Codec[Vector[DnsQuestion]] =
     "qdsection" | vectorOfN(provide(count), dnsQuestionSection)
@@ -160,7 +158,7 @@ trait DnsCodec {
     "arsection" | vectorOfN(provide(count), dnsResourceRecord)
 }
 
-class DnsMessageDecoder(bits: BitVector) extends DnsCodec {
+class DnsMessageDecoder(bits: BitVector) extends DnsCodec:
 
   private var stash: Option[BitVector] = None
 
@@ -192,16 +190,15 @@ class DnsMessageDecoder(bits: BitVector) extends DnsCodec {
       )
     )
   )
-}
+end DnsMessageDecoder
 
-object DnsCodec extends DnsCodec {
+object DnsCodec extends DnsCodec:
 
   // format: off
-  val dnsMessage: Codec[DnsMessage] = new Codec[DnsMessage] {
-
+  val dnsMessage: Codec[DnsMessage] = new Codec[DnsMessage]:
     override def sizeBound: SizeBound = SizeBound.atMost(512 * 8)
 
-    override def decode(bits: BitVector): Attempt[DecodeResult[DnsMessage]] = {
+    override def decode(bits: BitVector): Attempt[DecodeResult[DnsMessage]] =
       val decoder = new DnsMessageDecoder(bits)
       for {
         header      <- decoder.dnsHeader.decode(bits)
@@ -217,10 +214,8 @@ object DnsCodec extends DnsCodec {
         DnsMessage(header.value, questions.value, answers.value, authorities.value, additionals.value),
         additionals.remainder
       )
-    }
 
-    override def encode(message: DnsMessage): Attempt[BitVector] = {
-      for {
+    override def encode(message: DnsMessage): Attempt[BitVector] = for {
         header      <- dnsHeader.encode(message.header)
         qdc         <- qdcount.encode(message.questions.size)
         anc         <- ancount.encode(message.answers.size)
@@ -231,8 +226,7 @@ object DnsCodec extends DnsCodec {
         authorities <- authoritySection(message.authorities.size).encode(message.authorities.toVector)
         additionals <- additionalSection(message.additionals.size).encode(message.additionals.toVector)
       } yield header ++ qdc ++ anc ++ nsc ++ arc ++ questions ++ answers ++ authorities ++ additionals
-    }
-  }
+  end dnsMessage
   // format: on
 
-}
+end DnsCodec

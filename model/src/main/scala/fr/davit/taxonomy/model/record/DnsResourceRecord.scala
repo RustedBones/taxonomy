@@ -18,9 +18,6 @@ package fr.davit.taxonomy.model.record
 
 import java.net.{Inet4Address, Inet6Address}
 
-import enumeratum.ValueEnumMacros
-import enumeratum.values.{IntEnum, IntEnumEntry}
-
 import scala.collection.immutable
 import scala.concurrent.duration.FiniteDuration
 
@@ -32,28 +29,23 @@ final case class DnsResourceRecord(
     data: DnsRecordData
 )
 
-sealed trait DnsRecordClass extends IntEnumEntry
+enum DnsRecordClass(val code: Int):
+  case Internet extends DnsRecordClass(1)
+  case Chaos extends DnsRecordClass(3)
+  case Hesiod extends DnsRecordClass(4)
+  case None extends DnsRecordClass(234)
+  case Any extends DnsRecordClass(255)
+  case Unassigned(value: Int) extends DnsRecordClass(value)
 
-object DnsRecordClass extends IntEnum[DnsRecordClass] {
-
-  sealed abstract class Assigned(val value: Int) extends DnsRecordClass
-  final case class Unassigned(value: Int) extends DnsRecordClass
-
-  case object Reserved extends Assigned(0)
-  case object Internet extends Assigned(1)
-  case object Chaos extends Assigned(3)
-  case object Hesiod extends Assigned(4)
-  case object Any extends Assigned(255)
-
-  private def assignedValues: immutable.IndexedSeq[Assigned] =
-    macro ValueEnumMacros.findIntValueEntriesImpl[Assigned]
-
-  private def unassignedValues: immutable.IndexedSeq[Unassigned] =
-    (5 until 255).map(Unassigned)
-
-  override lazy val values: immutable.IndexedSeq[DnsRecordClass] =
-    assignedValues ++ unassignedValues
-}
+object DnsRecordClass:
+  def apply(code: Int): DnsRecordClass = code match {
+    case 1                      => Internet
+    case 3                      => Chaos
+    case 4                      => Hesiod
+    case 254                    => None
+    case 255                    => Any
+    case c if 0 <= c && c < 256 => Unassigned(c)
+  }
 
 abstract class DnsRecordData(val `type`: DnsRecordType)
 

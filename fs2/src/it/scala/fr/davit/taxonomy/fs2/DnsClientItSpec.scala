@@ -28,7 +28,7 @@ import scodec.Codec
 import java.net.{Inet4Address, InetAddress, InetSocketAddress}
 import scala.concurrent.duration._
 
-class DnsClientItSpec extends CatsEffectSuite {
+class DnsClientItSpec extends CatsEffectSuite:
 
   implicit val codec: Codec[DnsMessage] = DnsCodec.dnsMessage
 
@@ -50,4 +50,3 @@ class DnsClientItSpec extends CatsEffectSuite {
     )
     response assertEquals DnsPacket(quad9DnsServer, message)
   }
-}
