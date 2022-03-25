@@ -115,8 +115,8 @@ class DnsCodecSpec extends FunSuite {
 
     val data = (
       ByteVector(name.length.toByte) ++ ByteVector(name.getBytes(DnsCodec.ascii)) ++ ByteVector.fromByte(0) ++ // name
-        ByteVector.fromInt(DnsRecordType.A.value, 2) ++ // type
-        ByteVector.fromInt(DnsRecordClass.Internet.value, 2) ++ // class
+        ByteVector.fromInt(DnsRecordType.A.code, 2) ++ // type
+        ByteVector.fromInt(DnsRecordClass.Internet.code, 2) ++ // class
         ByteVector.fromLong(ttl.toSeconds, 4) ++ // ttl
         ByteVector.fromInt(4, 2) ++ ByteVector(ipv4.getAddress) // rdlength + rdata
     ).toBitVector

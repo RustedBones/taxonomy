@@ -28,14 +28,14 @@ final case class DnsMessage(
     additionals: immutable.Seq[DnsResourceRecord]
 )
 
-object DnsMessage {
+object DnsMessage:
 
   def query(
       id: Int = 0,
       opCode: DnsOpCode = DnsOpCode.StandardQuery,
       isRecursionDesired: Boolean = true,
       questions: Seq[DnsQuestion] = Seq.empty
-  ): DnsMessage = {
+  ): DnsMessage =
     val header = DnsHeader(
       id,
       DnsType.Query,
@@ -54,5 +54,3 @@ object DnsMessage {
       Vector.empty,
       Vector.empty
     )
-  }
-}

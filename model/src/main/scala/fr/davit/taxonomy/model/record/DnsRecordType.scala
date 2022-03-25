@@ -16,106 +16,171 @@
 
 package fr.davit.taxonomy.model.record
 
-import enumeratum.ValueEnumMacros
-import enumeratum.values.{IntEnum, IntEnumEntry}
+enum DnsRecordType(val code: Int):
+  case A extends DnsRecordType(1)
+  case NS extends DnsRecordType(2)
+  case MD extends DnsRecordType(3)
+  case MF extends DnsRecordType(4)
+  case CNAME extends DnsRecordType(5)
+  case SOA extends DnsRecordType(6)
+  case MB extends DnsRecordType(7)
+  case MG extends DnsRecordType(8)
+  case MR extends DnsRecordType(9)
+  case NULL extends DnsRecordType(10)
+  case WKS extends DnsRecordType(11)
+  case PTR extends DnsRecordType(12)
+  case HINFO extends DnsRecordType(13)
+  case MINFO extends DnsRecordType(14)
+  case MX extends DnsRecordType(15)
+  case TXT extends DnsRecordType(16)
+  case RP extends DnsRecordType(17)
+  case AFSDB extends DnsRecordType(18)
+  case X25 extends DnsRecordType(19)
+  case ISDN extends DnsRecordType(20)
+  case RT extends DnsRecordType(21)
+  case NSAP extends DnsRecordType(22)
+  case `NSAP-PTR` extends DnsRecordType(23)
+  case SIG extends DnsRecordType(24)
+  case KEY extends DnsRecordType(25)
+  case PX extends DnsRecordType(26)
+  case GPOS extends DnsRecordType(27)
+  case AAAA extends DnsRecordType(28)
+  case LOC extends DnsRecordType(29)
+  case NXT extends DnsRecordType(30)
+  case EID extends DnsRecordType(31)
+  case NIMLOC extends DnsRecordType(32)
+  case SRV extends DnsRecordType(33)
+  case ATMA extends DnsRecordType(34)
+  case NAPTR extends DnsRecordType(35)
+  case KX extends DnsRecordType(36)
+  case CERT extends DnsRecordType(37)
+  case A6 extends DnsRecordType(38)
+  case DNAME extends DnsRecordType(39)
+  case SINK extends DnsRecordType(40)
+  case OPT extends DnsRecordType(41)
+  case APL extends DnsRecordType(42)
+  case DS extends DnsRecordType(43)
+  case SSHFP extends DnsRecordType(44)
+  case IPSECKEY extends DnsRecordType(45)
+  case RRSIG extends DnsRecordType(46)
+  case NSEC extends DnsRecordType(47)
+  case DNSKEY extends DnsRecordType(48)
+  case DHCID extends DnsRecordType(49)
+  case NSEC3 extends DnsRecordType(50)
+  case NSEC3PARAM extends DnsRecordType(51)
+  case TLSA extends DnsRecordType(52)
+  case SMIMEA extends DnsRecordType(53)
+  case HIP extends DnsRecordType(55)
+  case NINFO extends DnsRecordType(56)
+  case RKEY extends DnsRecordType(57)
+  case TALINK extends DnsRecordType(58)
+  case CDS extends DnsRecordType(59)
+  case CDNSKEY extends DnsRecordType(60)
+  case OPENPGPKEY extends DnsRecordType(61)
+  case CSYNC extends DnsRecordType(62)
+  case ZONEMD extends DnsRecordType(63)
+  case SPF extends DnsRecordType(99)
+  case UINFO extends DnsRecordType(100)
+  case UID extends DnsRecordType(101)
+  case GID extends DnsRecordType(102)
+  case UNSPEC extends DnsRecordType(103)
+  case NID extends DnsRecordType(104)
+  case L32 extends DnsRecordType(105)
+  case L64 extends DnsRecordType(106)
+  case LP extends DnsRecordType(107)
+  case EUI48 extends DnsRecordType(108)
+  case EUI64 extends DnsRecordType(109)
+  case TKEY extends DnsRecordType(249)
+  case TSIG extends DnsRecordType(250)
+  case IXFR extends DnsRecordType(251)
+  case AXFR extends DnsRecordType(252)
+  case MAILB extends DnsRecordType(253)
+  case MAILA extends DnsRecordType(254)
+  case `*` extends DnsRecordType(255)
+  case Unassigned(value: Int) extends DnsRecordType(value)
 
-import scala.collection.immutable
-
-sealed trait DnsRecordType extends IntEnumEntry
-
-object DnsRecordType extends IntEnum[DnsRecordType] {
-
-  sealed abstract class Assigned(val value: Int) extends DnsRecordType
-  final case class Unassigned(value: Int) extends DnsRecordType
-
-  case object A extends Assigned(1)
-  case object NS extends Assigned(2)
-  case object MD extends Assigned(3)
-  case object MF extends Assigned(4)
-  case object CNAME extends Assigned(5)
-  case object SOA extends Assigned(6)
-  case object MB extends Assigned(7)
-  case object MG extends Assigned(8)
-  case object MR extends Assigned(9)
-  case object NULL extends Assigned(10)
-  case object WKS extends Assigned(11)
-  case object PTR extends Assigned(12)
-  case object HINFO extends Assigned(13)
-  case object MINFO extends Assigned(14)
-  case object MX extends Assigned(15)
-  case object TXT extends Assigned(16)
-  case object RP extends Assigned(17)
-  case object AFSDB extends Assigned(18)
-  case object X25 extends Assigned(19)
-  case object ISDN extends Assigned(20)
-  case object RT extends Assigned(21)
-  case object NSAP extends Assigned(22)
-  case object `NSAP-PTR` extends Assigned(23)
-  case object SIG extends Assigned(24)
-  case object KEY extends Assigned(25)
-  case object PX extends Assigned(26)
-  case object GPOS extends Assigned(27)
-  case object AAAA extends Assigned(28)
-  case object LOC extends Assigned(29)
-  case object NXT extends Assigned(30)
-  case object EID extends Assigned(31)
-  case object NIMLOC extends Assigned(32)
-  case object SRV extends Assigned(33)
-  case object ATMA extends Assigned(34)
-  case object NAPTR extends Assigned(35)
-  case object KX extends Assigned(36)
-  case object CERT extends Assigned(37)
-  case object A6 extends Assigned(38)
-  case object DNAME extends Assigned(39)
-  case object SINK extends Assigned(40)
-  case object OPT extends Assigned(41)
-  case object APL extends Assigned(42)
-  case object DS extends Assigned(43)
-  case object SSHFP extends Assigned(44)
-  case object IPSECKEY extends Assigned(45)
-  case object RRSIG extends Assigned(46)
-  case object NSEC extends Assigned(47)
-  case object DNSKEY extends Assigned(48)
-  case object DHCID extends Assigned(49)
-  case object NSEC3 extends Assigned(50)
-  case object NSEC3PARAM extends Assigned(51)
-  case object TLSA extends Assigned(52)
-  case object SMIMEA extends Assigned(53)
-  case object HIP extends Assigned(55)
-  case object NINFO extends Assigned(56)
-  case object RKEY extends Assigned(57)
-  case object TALINK extends Assigned(58)
-  case object CDS extends Assigned(59)
-  case object CDNSKEY extends Assigned(60)
-  case object OPENPGPKEY extends Assigned(61)
-  case object CSYNC extends Assigned(62)
-  case object ZONEMD extends Assigned(63)
-  case object SPF extends Assigned(99)
-  case object UINFO extends Assigned(100)
-  case object UID extends Assigned(101)
-  case object GID extends Assigned(102)
-  case object UNSPEC extends Assigned(103)
-  case object NID extends Assigned(104)
-  case object L32 extends Assigned(105)
-  case object L64 extends Assigned(106)
-  case object LP extends Assigned(107)
-  case object EUI48 extends Assigned(108)
-  case object EUI64 extends Assigned(109)
-  case object TKEY extends Assigned(249)
-  case object TSIG extends Assigned(250)
-  case object IXFR extends Assigned(251)
-  case object AXFR extends Assigned(252)
-  case object MAILB extends Assigned(253)
-  case object MAILA extends Assigned(254)
-  case object `*` extends Assigned(255)
-
-  private def assignedValues: immutable.IndexedSeq[Assigned] =
-    macro ValueEnumMacros.findIntValueEntriesImpl[Assigned]
-
-  private def unassignedValues: immutable.IndexedSeq[Unassigned] =
-    Unassigned(54) +: ((64 to 98).map(Unassigned) ++ (110 until 248).map(Unassigned))
-
-  override lazy val values: immutable.IndexedSeq[DnsRecordType] =
-    assignedValues ++ unassignedValues
-
-}
+object DnsRecordType:
+  def apply(code: Int): DnsRecordType = code match {
+    case 1                     => A
+    case 2                     => NS
+    case 3                     => MD
+    case 4                     => MF
+    case 5                     => CNAME
+    case 6                     => SOA
+    case 7                     => MB
+    case 8                     => MG
+    case 9                     => MR
+    case 10                    => NULL
+    case 11                    => WKS
+    case 12                    => PTR
+    case 13                    => HINFO
+    case 14                    => MINFO
+    case 15                    => MX
+    case 16                    => TXT
+    case 17                    => RP
+    case 18                    => AFSDB
+    case 19                    => X25
+    case 20                    => ISDN
+    case 21                    => RT
+    case 22                    => NSAP
+    case 23                    => `NSAP-PTR`
+    case 24                    => SIG
+    case 25                    => KEY
+    case 26                    => PX
+    case 27                    => GPOS
+    case 28                    => AAAA
+    case 29                    => LOC
+    case 30                    => NXT
+    case 31                    => EID
+    case 32                    => NIMLOC
+    case 33                    => SRV
+    case 34                    => ATMA
+    case 35                    => NAPTR
+    case 36                    => KX
+    case 37                    => CERT
+    case 38                    => A6
+    case 39                    => DNAME
+    case 40                    => SINK
+    case 41                    => OPT
+    case 42                    => APL
+    case 43                    => DS
+    case 44                    => SSHFP
+    case 45                    => IPSECKEY
+    case 46                    => RRSIG
+    case 47                    => NSEC
+    case 48                    => DNSKEY
+    case 49                    => DHCID
+    case 50                    => NSEC3
+    case 51                    => NSEC3PARAM
+    case 52                    => TLSA
+    case 53                    => SMIMEA
+    case 55                    => HIP
+    case 56                    => NINFO
+    case 57                    => RKEY
+    case 58                    => TALINK
+    case 59                    => CDS
+    case 60                    => CDNSKEY
+    case 61                    => OPENPGPKEY
+    case 62                    => CSYNC
+    case 63                    => ZONEMD
+    case 99                    => SPF
+    case 100                   => UINFO
+    case 101                   => UID
+    case 102                   => GID
+    case 103                   => UNSPEC
+    case 104                   => NID
+    case 105                   => L32
+    case 106                   => L64
+    case 107                   => LP
+    case 108                   => EUI48
+    case 109                   => EUI64
+    case 249                   => TKEY
+    case 250                   => TSIG
+    case 251                   => IXFR
+    case 252                   => AXFR
+    case 253                   => MAILB
+    case 254                   => MAILA
+    case 255                   => `*`
+    case c if 0 < c && c < 256 => Unassigned(c)
+    case _                     => throw new IllegalArgumentException(s"Invalid dns record type $code")
+  }

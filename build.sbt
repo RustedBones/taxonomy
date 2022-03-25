@@ -1,16 +1,10 @@
+
 // General info
 val username = "RustedBones"
 val repo     = "taxonomy"
 
-lazy val filterScalacOptions = { options: Seq[String] =>
-  options.filterNot { o =>
-    // get rid of value discard
-    o == "-Ywarn-value-discard" || o == "-Wvalue-discard"
-  }
-}
-
 // for sbt-github-actions
-ThisBuild / crossScalaVersions := Seq("2.13.5", "2.12.13")
+ThisBuild / scalaVersion := "3.1.1"
 ThisBuild / githubWorkflowBuild := Seq(
   WorkflowStep.Sbt(name = Some("Check project"), commands = List("scalafmtCheckAll", "headerCheckAll")),
   WorkflowStep.Sbt(name = Some("Build project"), commands = List("test"))
@@ -24,9 +18,7 @@ lazy val commonSettings = Defaults.itSettings ++
     organization := "fr.davit",
     organizationName := "Michel Davit",
     version := "1.0.1-SNAPSHOT",
-    crossScalaVersions := (ThisBuild / crossScalaVersions).value,
-    scalaVersion := crossScalaVersions.value.head,
-    scalacOptions ~= filterScalacOptions,
+    scalaVersion := (ThisBuild / scalaVersion).value,
     homepage := Some(url(s"https://github.com/$username/$repo")),
     licenses += ("Apache-2.0", new URL("https://www.apache.org/licenses/LICENSE-2.0.txt")),
     startYear := Some(2020),
@@ -42,6 +34,7 @@ lazy val commonSettings = Defaults.itSettings ++
     publishMavenStyle := true,
     Test / publishArtifact := false,
     publishTo := Some(if (isSnapshot.value) Opts.resolver.sonatypeSnapshots else Opts.resolver.sonatypeStaging),
+    releasePublishArtifactsAction := PgpKeys.publishSigned.value,
     credentials ++= (for {
       username <- sys.env.get("SONATYPE_USERNAME")
       password <- sys.env.get("SONATYPE_PASSWORD")
@@ -58,11 +51,6 @@ lazy val `taxonomy` = (project in file("."))
 
 lazy val `taxonomy-model` = (project in file("model"))
   .settings(commonSettings: _*)
-  .settings(
-    libraryDependencies ++= Seq(
-      Dependencies.Enumeratum
-    )
-  )
 
 lazy val `taxonomy-scodec` = (project in file("scodec"))
   .configs(IntegrationTest)

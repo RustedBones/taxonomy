@@ -26,7 +26,7 @@ import scodec.Codec
 import scodec.stream.{StreamDecoder, StreamEncoder}
 import sun.net.dns.ResolverConfiguration
 
-object Dns {
+object Dns:
 
   def resolverConfiguration[F[_]: Sync]: Resource[F, ResolverConfiguration] =
     Resource.make(Sync[F].delay(ResolverConfiguration.open()))(_ => Sync[F].unit)
@@ -45,15 +45,13 @@ object Dns {
 
   def stream[F[_]: RaiseThrowable](
       socket: DatagramSocket[F]
-  )(implicit codec: Codec[DnsMessage]): Pipe[F, DnsPacket, INothing] = { input =>
-    input.flatMap { packet =>
-      val address = SocketAddress.fromInetSocketAddress(packet.address)
-      Stream(packet.message)
-        .through(StreamEncoder.once(codec).toPipeByte[F])
-        .chunks
-        .map(data => Datagram(address, data))
-        .through(socket.writes)
-    }
+  )(implicit codec: Codec[DnsMessage]): Pipe[F, DnsPacket, INothing] = _.flatMap { packet =>
+    val address = SocketAddress.fromInetSocketAddress(packet.address)
+    Stream(packet.message)
+      .through(StreamEncoder.once(codec).toPipeByte[F])
+      .chunks
+      .map(data => Datagram(address, data))
+      .through(socket.writes)
   }
 
   def listen[F[_]: RaiseThrowable](
@@ -65,4 +63,3 @@ object Dns {
         .chunk(datagram.bytes)
         .through(StreamDecoder.once(codec).toPipeByte[F])
     } yield DnsPacket(datagram.remote.toInetSocketAddress, message)
-}
