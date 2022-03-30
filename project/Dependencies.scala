@@ -3,7 +3,7 @@ import sbt._
 object Dependencies {
 
   object Versions {
-    val FS2      = "3.2.5"
+    val FS2      = "3.2.7"
     val MUnitCE3 = "1.0.7"
     val Scodec   = "2.1.0"
   }
