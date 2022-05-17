@@ -1,10 +1,9 @@
-
 // General info
 val username = "RustedBones"
 val repo     = "taxonomy"
 
 // for sbt-github-actions
-ThisBuild / scalaVersion := "3.1.1"
+ThisBuild / scalaVersion := "3.1.2"
 ThisBuild / githubWorkflowBuild := Seq(
   WorkflowStep.Sbt(name = Some("Check project"), commands = List("scalafmtCheckAll", "headerCheckAll")),
   WorkflowStep.Sbt(name = Some("Build project"), commands = List("test", "IntegrationTest/test"))
