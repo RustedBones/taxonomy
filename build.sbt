@@ -1,3 +1,5 @@
+import scala.annotation.nowarn
+
 // General info
 val username = "RustedBones"
 val repo     = "taxonomy"
@@ -8,7 +10,7 @@ ThisBuild / githubWorkflowBuild := Seq(
   WorkflowStep.Sbt(name = Some("Check project"), commands = List("scalafmtCheckAll", "headerCheckAll")),
   WorkflowStep.Sbt(name = Some("Build project"), commands = List("test", "IntegrationTest/test"))
 )
-ThisBuild / githubWorkflowTargetBranches := Seq("master")
+ThisBuild / githubWorkflowTargetBranches := Seq("main")
 ThisBuild / githubWorkflowPublishTargetBranches := Seq.empty
 
 lazy val commonSettings = Defaults.itSettings ++
@@ -31,7 +33,10 @@ lazy val commonSettings = Defaults.itSettings ++
     ),
     publishMavenStyle := true,
     Test / publishArtifact := false,
-    publishTo := Some(if (isSnapshot.value) Opts.resolver.sonatypeSnapshots else Opts.resolver.sonatypeStaging),
+    publishTo := {
+      val status = if (isSnapshot.value) "snapshots" else "staging"
+      Some(Resolver.sonatypeRepo(status): @nowarn("cat=deprecation"))
+    },
     releasePublishArtifactsAction := PgpKeys.publishSigned.value,
     credentials ++= (for {
       username <- sys.env.get("SONATYPE_USERNAME")
