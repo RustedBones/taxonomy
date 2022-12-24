@@ -45,7 +45,7 @@ object Dns:
 
   def stream[F[_]: RaiseThrowable](
       socket: DatagramSocket[F]
-  )(implicit codec: Codec[DnsMessage]): Pipe[F, DnsPacket, INothing] = _.flatMap { packet =>
+  )(implicit codec: Codec[DnsMessage]): Pipe[F, DnsPacket, Nothing] = _.flatMap { packet =>
     val address = SocketAddress.fromInetSocketAddress(packet.address)
     Stream(packet.message)
       .through(StreamEncoder.once(codec).toPipeByte[F])
