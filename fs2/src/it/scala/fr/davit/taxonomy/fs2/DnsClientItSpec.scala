@@ -30,7 +30,7 @@ import scala.concurrent.duration._
 
 class DnsClientItSpec extends CatsEffectSuite:
 
-  implicit val codec: Codec[DnsMessage] = DnsCodec.dnsMessage
+  given Codec[DnsMessage] = DnsCodec.dnsMessage
 
   val quad9DnsServer = new InetSocketAddress("9.9.9.9", 53)
 

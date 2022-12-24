@@ -44,18 +44,18 @@ Here is a quick example of a DNS lookup to the `9.9.9.9` DNS server for the `dav
 ```scala
 import java.net.{Inet4Address, InetAddress, InetSocketAddress}
 
-import cats.effect._
-import cats.effect.unsafe.implicits._
-import fr.davit.taxonomy.model.record._
-import fr.davit.taxonomy.model._
+import cats.effect.*
+import cats.effect.unsafe.implicits.*
+import fr.davit.taxonomy.model.record.*
+import fr.davit.taxonomy.model.*
 import fr.davit.taxonomy.scodec.DnsCodec
 import fs2.io.net.Network
 import munit.CatsEffectSuite
 import scodec.Codec
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
-implicit val codec: Codec[DnsMessage] = DnsCodec.dnsMessage
+given Codec[DnsMessage] = DnsCodec.dnsMessage
 
 val quad9DnsServer = new InetSocketAddress("9.9.9.9", 53)
 

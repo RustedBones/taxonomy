@@ -34,7 +34,7 @@ object Dns:
   def resolve[F[_]: Sync](
       socket: DatagramSocket[F],
       packet: DnsPacket
-  )(implicit codec: Codec[DnsMessage]): F[DnsPacket] =
+  )(using codec: Codec[DnsMessage]): F[DnsPacket] =
     for
       data <- Sync[F].delay(codec.encode(packet.message).require)
       address = SocketAddress.fromInetSocketAddress(packet.address)
@@ -45,7 +45,7 @@ object Dns:
 
   def stream[F[_]: RaiseThrowable](
       socket: DatagramSocket[F]
-  )(implicit codec: Codec[DnsMessage]): Pipe[F, DnsPacket, Nothing] = _.flatMap { packet =>
+  )(using codec: Codec[DnsMessage]): Pipe[F, DnsPacket, Nothing] = _.flatMap { packet =>
     val address = SocketAddress.fromInetSocketAddress(packet.address)
     Stream(packet.message)
       .through(StreamEncoder.once(codec).toPipeByte[F])
@@ -56,7 +56,7 @@ object Dns:
 
   def listen[F[_]: RaiseThrowable](
       socket: DatagramSocket[F]
-  )(implicit codec: Codec[DnsMessage]): Stream[F, DnsPacket] =
+  )(using codec: Codec[DnsMessage]): Stream[F, DnsPacket] =
     for
       datagram <- socket.reads
       message <- Stream
