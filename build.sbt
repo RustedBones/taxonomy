@@ -34,8 +34,12 @@ lazy val commonSettings = Defaults.itSettings ++
     publishMavenStyle := true,
     Test / publishArtifact := false,
     publishTo := {
-      val status = if (isSnapshot.value) "snapshots" else "staging"
-      Some(Resolver.sonatypeRepo(status): @nowarn("cat=deprecation"))
+      val resolver = if (isSnapshot.value) {
+        Opts.resolver.sonatypeSnapshots: @nowarn("cat=deprecation")
+      } else {
+        Opts.resolver.sonatypeStaging
+      }
+      Some(resolver)
     },
     releasePublishArtifactsAction := PgpKeys.publishSigned.value,
     credentials ++= (for {
