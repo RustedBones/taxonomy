@@ -17,7 +17,7 @@
 package fr.davit.taxonomy.fs2
 
 import cats.effect.*
-import com.comcast.ip4s.{Dns as _}
+import com.comcast.ip4s.Dns as _
 import fr.davit.taxonomy.model.record.{DnsARecordData, DnsRecordClass, DnsRecordType, DnsResourceRecord}
 import fr.davit.taxonomy.model.{DnsMessage, DnsPacket, DnsQuestion, DnsType}
 import fr.davit.taxonomy.scodec.DnsCodec
