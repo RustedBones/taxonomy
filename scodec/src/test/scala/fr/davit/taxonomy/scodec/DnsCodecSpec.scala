@@ -18,12 +18,12 @@ package fr.davit.taxonomy.scodec
 
 import java.net.{Inet4Address, InetAddress}
 import fr.davit.taxonomy.model.record.{DnsARecordData, DnsRecordClass, DnsRecordType, DnsResourceRecord}
-import fr.davit.taxonomy.model._
+import fr.davit.taxonomy.model.*
 import munit.FunSuite
-import scodec.bits._
+import scodec.bits.*
 import scodec.{Attempt, Err}
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.util.control.NonFatal
 
 class DnsCodecSpec extends FunSuite:
@@ -94,7 +94,7 @@ class DnsCodecSpec extends FunSuite:
   }
 
   test("detect name pointer cycle") {
-    val data = (
+    val data           = (
       ByteVector.fromByte(5) ++ ByteVector("cycle".getBytes(DnsCodec.ascii)) ++
         ByteVector.fromByte(192.toByte) ++ ByteVector.fromByte(0)
     ).toBitVector
@@ -112,17 +112,17 @@ class DnsCodecSpec extends FunSuite:
 
     val data = (
       ByteVector(name.length.toByte) ++ ByteVector(name.getBytes(DnsCodec.ascii)) ++ ByteVector.fromByte(0) ++ // name
-        ByteVector.fromInt(DnsRecordType.A.code, 2) ++ // type
-        ByteVector.fromInt(DnsRecordClass.Internet.code, 2) ++ // class
-        ByteVector.fromLong(ttl.toSeconds, 4) ++ // ttl
-        ByteVector.fromInt(4, 2) ++ ByteVector(ipv4.getAddress) // rdlength + rdata
+        ByteVector.fromInt(DnsRecordType.A.code, 2) ++                                                         // type
+        ByteVector.fromInt(DnsRecordClass.Internet.code, 2) ++                                                 // class
+        ByteVector.fromLong(ttl.toSeconds, 4) ++                                                               // ttl
+        ByteVector.fromInt(4, 2) ++ ByteVector(ipv4.getAddress)                                                // rdlength + rdata
     ).toBitVector
     assertEquals(DnsCodec.dnsResourceRecord.encode(aRecord).require, data)
     assertEquals(DnsCodec.dnsResourceRecord.complete.decode(data).require.value, aRecord)
   }
 
   test("encode / decode DNS messages") {
-    val header = DnsHeader(
+    val header   = DnsHeader(
       id = 1,
       `type` = DnsType.Query,
       opCode = DnsOpCode.StandardQuery,
@@ -139,7 +139,7 @@ class DnsCodecSpec extends FunSuite:
       `class` = DnsRecordClass.Internet
     )
 
-    val query = DnsMessage(
+    val query     = DnsMessage(
       header,
       List(question),
       List.empty,
@@ -150,7 +150,7 @@ class DnsCodecSpec extends FunSuite:
     assertEquals(DnsCodec.dnsMessage.encode(query).require, queryData)
     assertEquals(DnsCodec.dnsMessage.complete.decode(queryData).require.value, query)
 
-    val answer = DnsResourceRecord(
+    val answer   = DnsResourceRecord(
       name = "davit.fr",
       cacheFlush = false,
       `class` = DnsRecordClass.Internet,
