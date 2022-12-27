@@ -30,11 +30,11 @@ final case class DnsResourceRecord(
 )
 
 enum DnsRecordClass(val code: Int):
-  case Internet extends DnsRecordClass(1)
-  case Chaos extends DnsRecordClass(3)
-  case Hesiod extends DnsRecordClass(4)
-  case None extends DnsRecordClass(234)
-  case Any extends DnsRecordClass(255)
+  case Internet               extends DnsRecordClass(1)
+  case Chaos                  extends DnsRecordClass(3)
+  case Hesiod                 extends DnsRecordClass(4)
+  case None                   extends DnsRecordClass(234)
+  case Any                    extends DnsRecordClass(255)
   case Unassigned(value: Int) extends DnsRecordClass(value)
 
 object DnsRecordClass:

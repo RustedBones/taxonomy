@@ -16,8 +16,8 @@
 
 package fr.davit.taxonomy.fs2
 
-import cats.effect._
-import com.comcast.ip4s.{Dns => _}
+import cats.effect.*
+import com.comcast.ip4s.Dns as _
 import fr.davit.taxonomy.model.record.{DnsARecordData, DnsRecordClass, DnsRecordType, DnsResourceRecord}
 import fr.davit.taxonomy.model.{DnsMessage, DnsPacket, DnsQuestion, DnsType}
 import fr.davit.taxonomy.scodec.DnsCodec
@@ -26,7 +26,7 @@ import munit.CatsEffectSuite
 import scodec.Codec
 
 import java.net.{Inet4Address, InetAddress, InetSocketAddress}
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class DnsClientItSpec extends CatsEffectSuite:
 
@@ -40,7 +40,7 @@ class DnsClientItSpec extends CatsEffectSuite:
     val socketResource = Network[IO].openDatagramSocket()
     val response       = socketResource.use(s => Dns.resolve(s, DnsPacket(quad9DnsServer, query)))
 
-    val ip = InetAddress.getByName("217.70.184.38").asInstanceOf[Inet4Address]
+    val ip      = InetAddress.getByName("217.70.184.38").asInstanceOf[Inet4Address]
     val message = DnsMessage(
       query.header.copy(`type` = DnsType.Response, isRecursionAvailable = true),
       query.questions,

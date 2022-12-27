@@ -30,7 +30,7 @@ final case class DnsHeader(
 )
 
 enum DnsType(val code: Int):
-  case Query extends DnsType(0)
+  case Query    extends DnsType(0)
   case Response extends DnsType(1)
 
 object DnsType:
@@ -40,12 +40,12 @@ object DnsType:
     case _ => throw new IllegalArgumentException(s"Invalid dns type $code")
 
 enum DnsOpCode(val code: Int):
-  case StandardQuery extends DnsOpCode(0)
-  case InverseQuery extends DnsOpCode(1)
-  case ServerStatusRequest extends DnsOpCode(2)
-  case Notify extends DnsOpCode(4)
-  case Update extends DnsOpCode(5)
-  case DnsStatefulOperations extends DnsOpCode(6)
+  case StandardQuery          extends DnsOpCode(0)
+  case InverseQuery           extends DnsOpCode(1)
+  case ServerStatusRequest    extends DnsOpCode(2)
+  case Notify                 extends DnsOpCode(4)
+  case Update                 extends DnsOpCode(5)
+  case DnsStatefulOperations  extends DnsOpCode(6)
   case Unassigned(value: Int) extends DnsOpCode(value)
 
 object DnsOpCode:
@@ -60,18 +60,18 @@ object DnsOpCode:
     case _                     => throw new IllegalArgumentException(s"Invalid dns op code $code")
 
 enum DnsResponseCode(val code: Int):
-  case Success extends DnsResponseCode(0)
-  case FormatError extends DnsResponseCode(1)
-  case ServerFailure extends DnsResponseCode(2)
-  case NonExistentDomain extends DnsResponseCode(3)
-  case NotImplemented extends DnsResponseCode(4)
-  case Refused extends DnsResponseCode(5)
-  case ExtraDomain extends DnsResponseCode(6)
-  case ExtraRRSet extends DnsResponseCode(7)
-  case NonExistentRRSet extends DnsResponseCode(8)
-  case NotAuth extends DnsResponseCode(9)
-  case NotZone extends DnsResponseCode(10)
-  case DsoTypeNotImplemented extends DnsResponseCode(11)
+  case Success                extends DnsResponseCode(0)
+  case FormatError            extends DnsResponseCode(1)
+  case ServerFailure          extends DnsResponseCode(2)
+  case NonExistentDomain      extends DnsResponseCode(3)
+  case NotImplemented         extends DnsResponseCode(4)
+  case Refused                extends DnsResponseCode(5)
+  case ExtraDomain            extends DnsResponseCode(6)
+  case ExtraRRSet             extends DnsResponseCode(7)
+  case NonExistentRRSet       extends DnsResponseCode(8)
+  case NotAuth                extends DnsResponseCode(9)
+  case NotZone                extends DnsResponseCode(10)
+  case DsoTypeNotImplemented  extends DnsResponseCode(11)
   case Unassigned(value: Int) extends DnsResponseCode(value)
 
 object DnsResponseCode:

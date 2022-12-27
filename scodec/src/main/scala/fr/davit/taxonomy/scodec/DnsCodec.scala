@@ -16,17 +16,17 @@
 
 package fr.davit.taxonomy.scodec
 
-import _root_.scodec.bits._
-import _root_.scodec.codecs._
-import _root_.scodec.{Attempt, Codec, DecodeResult, Decoder, Err, SizeBound}
-import fr.davit.taxonomy.model.record._
-import fr.davit.taxonomy.model._
+import _root_.scodec.bits.*
+import _root_.scodec.codecs.*
+import _root_.scodec.{Attempt, Codec, Decoder, DecodeResult, Err, SizeBound}
+import fr.davit.taxonomy.model.record.*
+import fr.davit.taxonomy.model.*
 import scodec.Attempt.{Failure, Successful}
 
 import java.net.{Inet4Address, Inet6Address, InetAddress}
 import java.nio.charset.Charset
 import scala.collection.mutable
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 trait DnsCodec:
 
@@ -92,8 +92,8 @@ trait DnsCodec:
 
   lazy val dnsNAPTRRecordData: Codec[DnsNAPTRRecordData] =
     (uint16 :: uint16 :: characterString :: characterString :: characterString :: domainName).as[DnsNAPTRRecordData]
-  lazy val dnsNSRecordData: Codec[DnsNSRecordData]   = domainName.as[DnsNSRecordData]
-  lazy val dnsPTRRecordData: Codec[DnsPTRRecordData] = domainName.as[DnsPTRRecordData]
+  lazy val dnsNSRecordData: Codec[DnsNSRecordData]       = domainName.as[DnsNSRecordData]
+  lazy val dnsPTRRecordData: Codec[DnsPTRRecordData]     = domainName.as[DnsPTRRecordData]
 
   lazy val dnsSOARecordData: Codec[DnsSOARecordData] =
     (domainName :: domainName :: uint32 :: ttl :: ttl :: ttl :: ttl).as[DnsSOARecordData]
@@ -172,17 +172,17 @@ class DnsMessageDecoder(bits: BitVector) extends DnsCodec:
           .decode(data)
           .flatMap { result =>
             result.value match
-              case Right("") =>
+              case Right("")                           =>
                 val remainder = stash.getOrElse(result.remainder)
                 stash = None
                 seenPtrs.clear()
                 Successful(DecodeResult(Nil, remainder))
-              case Right(label) =>
+              case Right(label)                        =>
                 labels.decode(result.remainder).map(_.map(domain => label :: domain))
               case Left(ptr) if seenPtrs.contains(ptr) =>
                 Failure(Err("Name contains a pointer that loops"))
-              case Left(ptr) =>
-                if (stash.isEmpty) stash = Some(result.remainder)
+              case Left(ptr)                           =>
+                if stash.isEmpty then stash = Some(result.remainder)
                 seenPtrs += ptr
                 labels.decode(bits.drop(ptr * 8L))
           }

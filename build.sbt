@@ -1,3 +1,5 @@
+import org.scalafmt.sbt.ScalafmtPlugin
+
 import scala.annotation.nowarn
 
 // General info
@@ -15,6 +17,7 @@ ThisBuild / githubWorkflowPublishTargetBranches := Seq.empty
 
 lazy val commonSettings = Defaults.itSettings ++
   headerSettings(Configurations.IntegrationTest) ++
+  inConfig(IntegrationTest)(ScalafmtPlugin.scalafmtConfigSettings) ++
   Seq(
     organization := "fr.davit",
     organizationName := "Michel Davit",

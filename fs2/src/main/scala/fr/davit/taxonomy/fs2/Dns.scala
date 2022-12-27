@@ -36,8 +36,8 @@ object Dns:
       packet: DnsPacket
   )(using codec: Codec[DnsMessage]): F[DnsPacket] =
     for
-      data <- Sync[F].delay(codec.encode(packet.message).require)
-      address = SocketAddress.fromInetSocketAddress(packet.address)
+      data     <- Sync[F].delay(codec.encode(packet.message).require)
+      address   = SocketAddress.fromInetSocketAddress(packet.address)
       _        <- socket.write(Datagram(address, Chunk.byteVector(data.toByteVector)))
       response <- socket.read
       message  <- Sync[F].delay(codec.decode(response.bytes.toByteVector.toBitVector).require.value)
@@ -59,7 +59,7 @@ object Dns:
   )(using codec: Codec[DnsMessage]): Stream[F, DnsPacket] =
     for
       datagram <- socket.reads
-      message <- Stream
-        .chunk(datagram.bytes)
-        .through(StreamDecoder.once(codec).toPipeByte[F])
+      message  <- Stream
+                    .chunk(datagram.bytes)
+                    .through(StreamDecoder.once(codec).toPipeByte[F])
     yield DnsPacket(datagram.remote.toInetSocketAddress, message)
