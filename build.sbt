@@ -1,71 +1,76 @@
 import org.scalafmt.sbt.ScalafmtPlugin
 
-import scala.annotation.nowarn
-
 // General info
-val username = "RustedBones"
-val repo     = "taxonomy"
+val username  = "RustedBones"
+val repo      = "taxonomy"
+val githubUrl = s"https://github.com/$username/$repo"
 
-// for sbt-github-actions
-ThisBuild / scalaVersion := "3.2.1"
-ThisBuild / githubWorkflowBuild := Seq(
-  WorkflowStep.Sbt(name = Some("Check project"), commands = List("scalafmtCheckAll", "headerCheckAll")),
-  WorkflowStep.Sbt(name = Some("Build project"), commands = List("test", "IntegrationTest/test"))
+ThisBuild / tlBaseVersion       := "1.2"
+ThisBuild / tlVersionIntroduced := Map("3" -> "1.1.0")
+ThisBuild / organization        := "fr.davit"
+ThisBuild / organizationName    := "Michel Davit"
+ThisBuild / startYear           := Some(2020)
+ThisBuild / licenses            := Seq(License.Apache2)
+ThisBuild / homepage            := Some(url(githubUrl))
+ThisBuild / scmInfo             := Some(ScmInfo(url(githubUrl), s"git@github.com:$username/$repo.git"))
+ThisBuild / developers          := List(
+  Developer(
+    id = s"$username",
+    name = "Michel Davit",
+    email = "michel@davit.fr",
+    url = url(s"https://github.com/$username")
+  )
 )
+
+// scala versions
+val scala3       = "3.3.1"
+val defaultScala = scala3
+
+// github actions
+val java17      = JavaSpec.temurin("17")
+val java11      = JavaSpec.temurin("11")
+val defaultJava = java17
+
+ThisBuild / scalaVersion                 := defaultScala
 ThisBuild / githubWorkflowTargetBranches := Seq("main")
-ThisBuild / githubWorkflowPublishTargetBranches := Seq.empty
+ThisBuild / githubWorkflowJavaVersions   := Seq(java17, java11)
+
+// build
+ThisBuild / tlFatalWarnings         := true
+ThisBuild / tlJdkRelease            := Some(8)
+ThisBuild / tlSonatypeUseLegacyHost := true
+
+// mima
+ThisBuild / mimaBinaryIssueFilters ++= Seq()
 
 lazy val commonSettings = Defaults.itSettings ++
   headerSettings(Configurations.IntegrationTest) ++
-  inConfig(IntegrationTest)(ScalafmtPlugin.scalafmtConfigSettings) ++
-  Seq(
-    organization := "fr.davit",
-    organizationName := "Michel Davit",
-    scalaVersion := (ThisBuild / scalaVersion).value,
-    homepage := Some(url(s"https://github.com/$username/$repo")),
-    licenses += ("Apache-2.0", new URL("https://www.apache.org/licenses/LICENSE-2.0.txt")),
-    startYear := Some(2020),
-    scmInfo := Some(ScmInfo(url(s"https://github.com/$username/$repo"), s"git@github.com:$username/$repo.git")),
-    developers := List(
-      Developer(
-        id = s"$username",
-        name = "Michel Davit",
-        email = "michel@davit.fr",
-        url = url(s"https://github.com/$username")
-      )
-    ),
-    publishMavenStyle := true,
-    Test / publishArtifact := false,
-    publishTo := {
-      val resolver = if (isSnapshot.value) {
-        Opts.resolver.sonatypeSnapshots: @nowarn("cat=deprecation")
-      } else {
-        Opts.resolver.sonatypeStaging
-      }
-      Some(resolver)
-    },
-    releasePublishArtifactsAction := PgpKeys.publishSigned.value,
-    credentials ++= (for {
-      username <- sys.env.get("SONATYPE_USERNAME")
-      password <- sys.env.get("SONATYPE_PASSWORD")
-    } yield Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)).toSeq,
+  inConfig(IntegrationTest)(ScalafmtPlugin.scalafmtConfigSettings) ++ Seq(
     testFrameworks += new TestFramework("munit.Framework")
   )
 
-lazy val `taxonomy` = (project in file("."))
-  .settings(commonSettings: _*)
-  .aggregate(`taxonomy-model`, `taxonomy-scodec`, `taxonomy-fs2`)
+lazy val `taxonomy` = project
+  .in(file("."))
+  .settings(commonSettings)
+  .aggregate(
+    `taxonomy-model`,
+    `taxonomy-scodec`,
+    `taxonomy-fs2`
+  )
   .settings(
-    publish / skip := true
+    publish / skip        := true,
+    mimaPreviousArtifacts := Set.empty
   )
 
-lazy val `taxonomy-model` = (project in file("model"))
-  .settings(commonSettings: _*)
+lazy val `taxonomy-model` = project
+  .in(file("model"))
+  .settings(commonSettings)
 
-lazy val `taxonomy-scodec` = (project in file("scodec"))
+lazy val `taxonomy-scodec` = project
+  .in(file("scodec"))
   .configs(IntegrationTest)
   .dependsOn(`taxonomy-model`)
-  .settings(commonSettings: _*)
+  .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
       Dependencies.ScodecCore,
@@ -73,10 +78,11 @@ lazy val `taxonomy-scodec` = (project in file("scodec"))
     )
   )
 
-lazy val `taxonomy-fs2` = (project in file("fs2"))
+lazy val `taxonomy-fs2` = project
+  .in(file("fs2"))
   .configs(IntegrationTest)
   .dependsOn(`taxonomy-scodec`)
-  .settings(commonSettings: _*)
+  .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
       Dependencies.FS2Core,
