@@ -5,14 +5,15 @@ val username  = "RustedBones"
 val repo      = "taxonomy"
 val githubUrl = s"https://github.com/$username/$repo"
 
-ThisBuild / tlBaseVersion    := "1.2"
-ThisBuild / organization     := "fr.davit"
-ThisBuild / organizationName := "Michel Davit"
-ThisBuild / startYear        := Some(2020)
-ThisBuild / licenses         := Seq(License.Apache2)
-ThisBuild / homepage         := Some(url(githubUrl))
-ThisBuild / scmInfo          := Some(ScmInfo(url(githubUrl), s"git@github.com:$username/$repo.git"))
-ThisBuild / developers       := List(
+ThisBuild / tlBaseVersion       := "1.2"
+ThisBuild / tlVersionIntroduced := Map("3" -> "1.1.0")
+ThisBuild / organization        := "fr.davit"
+ThisBuild / organizationName    := "Michel Davit"
+ThisBuild / startYear           := Some(2020)
+ThisBuild / licenses            := Seq(License.Apache2)
+ThisBuild / homepage            := Some(url(githubUrl))
+ThisBuild / scmInfo             := Some(ScmInfo(url(githubUrl), s"git@github.com:$username/$repo.git"))
+ThisBuild / developers          := List(
   Developer(
     id = s"$username",
     name = "Michel Davit",
@@ -57,7 +58,8 @@ lazy val `taxonomy` = project
     `taxonomy-fs2`
   )
   .settings(
-    publish / skip := true
+    publish / skip        := true,
+    mimaPreviousArtifacts := Set.empty
   )
 
 lazy val `taxonomy-model` = project
