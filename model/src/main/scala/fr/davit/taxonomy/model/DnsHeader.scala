@@ -16,8 +16,6 @@
 
 package fr.davit.taxonomy.model
 
-import scala.collection.immutable
-
 final case class DnsHeader(
     id: Int,
     `type`: DnsType,
