@@ -43,23 +43,24 @@ ThisBuild / tlSonatypeUseLegacyHost := true
 // mima
 ThisBuild / mimaBinaryIssueFilters ++= Seq()
 
-lazy val commonSettings = Defaults.itSettings ++
-  headerSettings(Configurations.IntegrationTest) ++
-  inConfig(IntegrationTest)(ScalafmtPlugin.scalafmtConfigSettings) ++ Seq(
-    testFrameworks += new TestFramework("munit.Framework")
-  )
+lazy val commonSettings = Seq(
+  testFrameworks += new TestFramework("munit.Framework")
+)
+
+lazy val noPublishSettings = Seq(
+  publish / skip        := true,
+  mimaPreviousArtifacts := Set.empty
+)
 
 lazy val `taxonomy` = project
   .in(file("."))
   .settings(commonSettings)
+  .settings(noPublishSettings)
   .aggregate(
     `taxonomy-model`,
     `taxonomy-scodec`,
-    `taxonomy-fs2`
-  )
-  .settings(
-    publish / skip        := true,
-    mimaPreviousArtifacts := Set.empty
+    `taxonomy-fs2`,
+    integration
   )
 
 lazy val `taxonomy-model` = project
@@ -68,7 +69,6 @@ lazy val `taxonomy-model` = project
 
 lazy val `taxonomy-scodec` = project
   .in(file("scodec"))
-  .configs(IntegrationTest)
   .dependsOn(`taxonomy-model`)
   .settings(commonSettings)
   .settings(
@@ -80,7 +80,6 @@ lazy val `taxonomy-scodec` = project
 
 lazy val `taxonomy-fs2` = project
   .in(file("fs2"))
-  .configs(IntegrationTest)
   .dependsOn(`taxonomy-scodec`)
   .settings(commonSettings)
   .settings(
@@ -88,6 +87,17 @@ lazy val `taxonomy-fs2` = project
       Dependencies.FS2Core,
       Dependencies.FS2IO,
       Dependencies.FS2Scodec,
+      Dependencies.Test.MUnitCE3
+    )
+  )
+
+lazy val integration = project
+  .in(file("integration"))
+  .dependsOn(`taxonomy-fs2`)
+  .settings(commonSettings)
+  .settings(noPublishSettings)
+  .settings(
+    libraryDependencies ++= Seq(
       Dependencies.Test.MUnitCE3
     )
   )

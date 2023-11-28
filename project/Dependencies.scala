@@ -14,7 +14,7 @@ object Dependencies {
   val ScodecCore = "org.scodec" %% "scodec-core" % Versions.Scodec
 
   object Test {
-    val MUnitCE3 = "org.typelevel" %% "munit-cats-effect-3" % Versions.MUnitCE3 % "it,test"
+    val MUnitCE3 = "org.typelevel" %% "munit-cats-effect-3" % Versions.MUnitCE3 % "test"
   }
 
 }
