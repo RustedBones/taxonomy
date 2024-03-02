@@ -23,7 +23,7 @@ ThisBuild / developers          := List(
 )
 
 // scala versions
-val scala3       = "3.3.1"
+val scala3       = "3.3.3"
 val defaultScala = scala3
 
 // github actions
