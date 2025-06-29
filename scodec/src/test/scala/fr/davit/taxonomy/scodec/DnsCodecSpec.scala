@@ -115,7 +115,7 @@ class DnsCodecSpec extends FunSuite:
         ByteVector.fromInt(DnsRecordType.A.code, 2) ++                                                         // type
         ByteVector.fromInt(DnsRecordClass.Internet.code, 2) ++                                                 // class
         ByteVector.fromLong(ttl.toSeconds, 4) ++                                                               // ttl
-        ByteVector.fromInt(4, 2) ++ ByteVector(ipv4.getAddress)                                                // rdlength + rdata
+        ByteVector.fromInt(4, 2) ++ ByteVector(ipv4.getAddress) // rdlength + rdata
     ).toBitVector
     assertEquals(DnsCodec.dnsResourceRecord.encode(aRecord).require, data)
     assertEquals(DnsCodec.dnsResourceRecord.complete.decode(data).require.value, aRecord)
