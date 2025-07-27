@@ -5,7 +5,7 @@ object Dependencies {
   object Versions {
     val FS2      = "3.9.3"
     val MUnitCE3 = "1.0.7"
-    val Scodec   = "2.2.2"
+    val Scodec   = "2.3.3"
   }
 
   val FS2Core    = "co.fs2"     %% "fs2-core"    % Versions.FS2
