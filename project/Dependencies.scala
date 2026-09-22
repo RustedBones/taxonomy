@@ -4,7 +4,7 @@ object Dependencies {
 
   object Versions {
     val FS2      = "3.9.3"
-    val MUnitCE3 = "1.0.7"
+    val MUnitCE3 = "2.2.1"
     val Scodec   = "2.2.2"
   }
 
@@ -14,7 +14,7 @@ object Dependencies {
   val ScodecCore = "org.scodec" %% "scodec-core" % Versions.Scodec
 
   object Test {
-    val MUnitCE3 = "org.typelevel" %% "munit-cats-effect-3" % Versions.MUnitCE3 % "test"
+    val MUnitCE3 = "org.typelevel" %% "munit-cats-effect" % Versions.MUnitCE3 % "test"
   }
 
 }
